@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainDebuggerWindow</class>
+ <widget class="QMainWindow" name="MainDebuggerWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>910</width>
+    <height>699</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>HarukaMirai - Windows ARM64 Reverse Engineering Debugger</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>911</width>
+      <height>651</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <widget class="QWidget" name="tab">
+     <attribute name="title">
+      <string>Debugger</string>
+     </attribute>
+     <widget class="QListView" name="listView">
+      <property name="geometry">
+       <rect>
+        <x>650</x>
+        <y>20</y>
+        <width>251</width>
+        <height>381</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>650</x>
+        <y>0</y>
+        <width>63</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Registers:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>650</x>
+        <y>400</y>
+        <width>63</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Stack:</string>
+      </property>
+     </widget>
+     <widget class="QListView" name="listView_2">
+      <property name="geometry">
+       <rect>
+        <x>650</x>
+        <y>420</y>
+        <width>251</width>
+        <height>191</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QTabWidget" name="tabWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>410</y>
+        <width>641</width>
+        <height>211</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tab_9">
+       <attribute name="title">
+        <string>Memory Inspector 1</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_10">
+       <attribute name="title">
+        <string>Memory Inspector 2</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_11">
+       <attribute name="title">
+        <string>Memory Inspector 3</string>
+       </attribute>
+      </widget>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_7">
+     <attribute name="title">
+      <string>HW&amp;SFT Interrupt</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_8">
+     <attribute name="title">
+      <string>Call Stack</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_2">
+     <attribute name="title">
+      <string>Memory View</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_3">
+     <attribute name="title">
+      <string>Modules</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_4">
+     <attribute name="title">
+      <string>Threads</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_5">
+     <attribute name="title">
+      <string>Handles</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_6">
+     <attribute name="title">
+      <string>Pdb Parser</string>
+     </attribute>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>910</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuHarukaMirai_Debugger">
+    <property name="title">
+     <string>HarukaMirai</string>
+    </property>
+    <addaction name="btnOpenExecutable"/>
+    <addaction name="btnAttachProcessContainer"/>
+    <addaction name="btnDebugDynamicLibrary"/>
+    <addaction name="separator"/>
+    <addaction name="btnExit"/>
+   </widget>
+   <widget class="QMenu" name="menuUtils">
+    <property name="title">
+     <string>Utils</string>
+    </property>
+    <addaction name="actionMemory_Patchs"/>
+    <addaction name="actionExport_Patchs"/>
+    <addaction name="actionImport_Patchs"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuHarukaMirai_Debugger"/>
+   <addaction name="menuUtils"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="btnOpenExecutable">
+   <property name="text">
+    <string>Open Executable</string>
+   </property>
+  </action>
+  <action name="btnAttachProcessContainer">
+   <property name="text">
+    <string>Attach Process Container</string>
+   </property>
+  </action>
+  <action name="btnDebugDynamicLibrary">
+   <property name="text">
+    <string>Debug a Dynamic Link Library</string>
+   </property>
+  </action>
+  <action name="btnExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionMemory_Patchs">
+   <property name="text">
+    <string>Memory Patchs</string>
+   </property>
+  </action>
+  <action name="actionExport_Patchs">
+   <property name="text">
+    <string>Export Patchs</string>
+   </property>
+  </action>
+  <action name="actionImport_Patchs">
+   <property name="text">
+    <string>Import Patchs</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

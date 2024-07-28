@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 21/07/2024
+    Last Update: 28/07/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -20,10 +20,30 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    /*
+     *  Disable MAXIMIZE Button and Disable FORM Resizing
+     */
+    setWindowFlags(windowFlags() & ~Qt::WindowMaximizeButtonHint);
+    setWindowFlags(Qt::MSWindowsFixedSizeDialogHint);
+
+    /*
+     * Slots
+     */
     connect(ui->btnOpenExecutable, &QAction::triggered, this, &MainDebuggerWindow::onOpenExecutableClicked);
     connect(ui->btnAttachProcessContainer, &QAction::triggered, this, &MainDebuggerWindow::onAttachProcessClicked);
     connect(ui->btnDebugDynamicLibrary, &QAction::triggered, this, &MainDebuggerWindow::onDebugDynamicLibraryClicked);
+    connect(ui->btnStopDebug, &QAction::triggered, this, &MainDebuggerWindow::onStopDebug);
     connect(ui->btnExit, &QAction::triggered, this, &MainDebuggerWindow::onExitClicked);
+
+    /*
+     * Block ListView Edit Value
+     */
+    ui->lstThreads->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->lstRegisters->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->lstStack->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->lstModules->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->lstUnloadedModules->setEditTriggers( QAbstractItemView::NoEditTriggers );
+
     
 }
 
@@ -38,38 +58,9 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
         return;
     }
 
-    STARTUPINFOEXW si;
-    ZeroMemory(&si, sizeof(si));
-    si.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&pi, sizeof(pi));
+    DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads, ui->lstModules, ui->lstUnloadedModules };
 
-    std::wstring filePathWStr = filePath.toStdWString();
-
-    std::wstring cmdLine = filePathWStr + L" ";
-    wchar_t* cmdLineMutable = &cmdLine[0];
-
-    BOOL ret = CreateProcessW(
-
-        NULL,
-        cmdLineMutable,
-        NULL,
-        NULL,
-        FALSE,
-        DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE,
-        NULL,
-        NULL,
-        &si.StartupInfo,
-        &pi
-
-    );
-
-    if (!ret) {
-
-        ui->statusbar->showMessage("[ERROR CreateProcessW]: 0x" + QString::number(GetLastError(), 16), 1000);
-
-        return;
-    }
+    this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
 
     //Testing
     DisassemblerEngine *disasm = new DisassemblerEngine();
@@ -104,7 +95,15 @@ void MainDebuggerWindow::onProcessAttachSelected(const std::pair<int, std::strin
 
     qDebug() << "Received: " << process.second << " " << QString::number(process.first);
 
-    this->m_dbgEngine = new DebuggerEngine(process);
+    //this->m_dbgEngine = new DebuggerEngine(process);
+
+    qDebug() << "TODO";
+
+}
+
+void MainDebuggerWindow::onStopDebug() {
+
+    this->m_dbgEngine->stopEngine();
 
 }
 

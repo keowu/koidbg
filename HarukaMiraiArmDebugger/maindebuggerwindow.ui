@@ -17,7 +17,7 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>10</x>
       <y>0</y>
       <width>911</width>
       <height>651</height>
@@ -30,7 +30,7 @@
      <attribute name="title">
       <string>Debugger</string>
      </attribute>
-     <widget class="QListView" name="listView">
+     <widget class="QListView" name="lstRegisters">
       <property name="geometry">
        <rect>
         <x>650</x>
@@ -66,7 +66,7 @@
        <string>Stack:</string>
       </property>
      </widget>
-     <widget class="QListView" name="listView_2">
+     <widget class="QListView" name="lstStack">
       <property name="geometry">
        <rect>
         <x>650</x>
@@ -124,20 +124,99 @@
      <attribute name="title">
       <string>Modules</string>
      </attribute>
+     <widget class="QListView" name="lstModules">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>40</y>
+        <width>891</width>
+        <height>271</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_4">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>10</y>
+        <width>301</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>All Modules for the debuggee process:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_5">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>320</y>
+        <width>361</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>All past-loaded Modules for the debugee process:</string>
+      </property>
+     </widget>
+     <widget class="QListView" name="lstUnloadedModules">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>350</y>
+        <width>891</width>
+        <height>261</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_4">
      <attribute name="title">
       <string>Threads</string>
      </attribute>
+     <widget class="QLabel" name="label_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>281</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>All Threads for the debuggee process:</string>
+      </property>
+     </widget>
+     <widget class="QListView" name="lstThreads">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>50</y>
+        <width>891</width>
+        <height>561</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_5">
      <attribute name="title">
       <string>Handles</string>
      </attribute>
     </widget>
+    <widget class="QWidget" name="tab_13">
+     <attribute name="title">
+      <string>Handlers</string>
+     </attribute>
+    </widget>
     <widget class="QWidget" name="tab_6">
      <attribute name="title">
       <string>Pdb Parser</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_12">
+     <attribute name="title">
+      <string>Decompiler</string>
      </attribute>
     </widget>
    </widget>
@@ -175,7 +254,14 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuCommands">
+    <property name="title">
+     <string>Commands</string>
+    </property>
+    <addaction name="btnStopDebug"/>
+   </widget>
    <addaction name="menuHarukaMirai_Debugger"/>
+   <addaction name="menuCommands"/>
    <addaction name="menuUtils"/>
    <addaction name="menuAbout"/>
   </widget>
@@ -218,6 +304,11 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="btnStopDebug">
+   <property name="text">
+    <string>Stop Debug</string>
    </property>
   </action>
  </widget>

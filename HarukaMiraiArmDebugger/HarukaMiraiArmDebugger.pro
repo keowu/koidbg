@@ -9,13 +9,15 @@ SOURCES += \
     debuggerengine.cpp \
     disassemblerengine.cpp \
     main.cpp \
-    maindebuggerwindow.cpp
+    maindebuggerwindow.cpp \
+    utilswindowssyscall.cpp
 
 HEADERS += \
     DebuggerEngine.h \
     attachprocesswindow.h \
     disassemblerengine.h \
-    maindebuggerwindow.h
+    maindebuggerwindow.h \
+    utilswindowssyscall.h
 
 LIBS += -lwtsapi32
 LIBS += -lAdvapi32

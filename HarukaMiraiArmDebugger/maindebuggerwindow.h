@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 21/07/2024
+    Last Update: 28/07/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -34,6 +34,7 @@ private slots:
     void onOpenExecutableClicked();
     void onAttachProcessClicked();
     void onDebugDynamicLibraryClicked();
+    void onStopDebug();
     void onExitClicked();
 
 private:

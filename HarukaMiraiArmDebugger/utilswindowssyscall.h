@@ -2,7 +2,7 @@
     File: utilswindowssycall.h
     Author: João Vitor(@Keowu)
     Created: 24/07/2024
-    Last Update: 28/07/2024
+    Last Update: 04/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -10,6 +10,7 @@
 #define UTILSWINDOWSSYSCALL_H
 #include <Windows.h>
 #include <Winternl.h>
+#include <dbghelp.h>
 #include <psapi.h>
 #include <tchar.h>
 #include <strsafe.h>
@@ -138,7 +139,108 @@ inline auto GetFileNameFromHandle(HANDLE hFile) -> QString {
     return fileName;
 }
 
+inline auto symbol_from_address(const HANDLE hProcess, const uintptr_t uipPC) -> QString {
 
+    SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_LOAD_LINES);
+    if (!SymInitialize(hProcess, NULL, TRUE)) {
+        //printf("SymInitialize failed: %d\n", GetLastError());
+    }
+
+    SYMBOL_INFO *symbol = reinterpret_cast<SYMBOL_INFO *>(calloc(sizeof(SYMBOL_INFO) + 256, 1));
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+    symbol->MaxNameLen = 255;
+
+    QString result = "";
+    DWORD64 displacement = 0;
+    if (SymFromAddr(hProcess, uipPC, &displacement, symbol)) {
+        //printf("Symbol Name: %s\n", symbol->Name);
+        //printf("Address: 0x%llX\n", symbol->Address);
+        //printf("Displacement: 0x%llX\n", displacement);
+        result = QString::asprintf(" %s!0x%llX", symbol->Name, displacement);
+
+    }
+
+    free(symbol);
+    SymCleanup(hProcess);
+
+    return result;
+}
+
+inline auto updateCallStackContext(const HANDLE hProcess, const HANDLE hThread, const uintptr_t regPC, const uintptr_t regFrame, const uintptr_t regStack, PVOID context, const DWORD machineType) -> std::pair<QVector<void*>, QVector<QString>> {
+
+    QVector<void*> stack;
+    QVector<QString> symbols;
+
+    if (context == nullptr) {
+        // qDebug() << "Invalid context pointer.";
+        return std::make_pair(stack, symbols);
+    }
+
+    if (!SymInitialize(hProcess, nullptr, TRUE)) {
+        // qDebug() << "SymInitialize failed. Error: " << GetLastError();
+        return std::make_pair(stack, symbols);
+    }
+
+    STACKFRAME64 stackFrame;
+    memset(&stackFrame, 0, sizeof(stackFrame));
+
+    stackFrame.AddrPC.Offset = regPC;
+    stackFrame.AddrPC.Mode = AddrModeFlat;
+
+    stackFrame.AddrFrame.Offset = regFrame;
+    stackFrame.AddrFrame.Mode = AddrModeFlat;
+
+    stackFrame.AddrStack.Offset = regStack;
+    stackFrame.AddrStack.Mode = AddrModeFlat;
+
+    auto GetSymbolName = [hProcess](DWORD64 address) -> QString {
+        // Allocate memory for SYMBOL_INFO
+        SYMBOL_INFO* symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR));
+        if (!symbol) {
+            return QString("Memory allocation failed");
+        }
+        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+        symbol->MaxNameLen = MAX_SYM_NAME;
+
+        QString symbolName;
+        if (SymFromAddr(hProcess, address, nullptr, symbol)) {
+            symbolName = QString::asprintf("%s", symbol->Name);
+        } else {
+            DWORD error = GetLastError();
+            symbolName = QString("Symbol not found. Error: %1").arg(error);
+        }
+
+        free(symbol);
+        return symbolName;
+    };
+
+    while (StackWalk64(
+        machineType,
+        hProcess,
+        hThread,
+        &stackFrame,
+        context,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
+        )) {
+
+        if (stackFrame.AddrPC.Offset == 0) break;
+
+        stack.push_back(reinterpret_cast<void*>(stackFrame.AddrPC.Offset));
+
+        symbols.push_back(GetSymbolName(stackFrame.AddrPC.Offset));
+    }
+
+    /*DWORD error = GetLastError();
+
+    if (error != NO_ERROR) {
+        qDebug() << "StackWalk64 failed with error code: " << error;
+    }*/
+    SymCleanup(hProcess);
+    return std::make_pair(stack, symbols);
+}
 
 };
 

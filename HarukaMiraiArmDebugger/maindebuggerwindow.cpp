@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 28/07/2024
+    Last Update: 04/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -43,6 +43,14 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->lstStack->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->lstModules->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->lstUnloadedModules->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->lstCallStack->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->tblMemoryView->setEditTriggers( QAbstractItemView::NoEditTriggers );
+
+    /*
+     * Memory View Selection policy
+     */
+    ui->tblMemoryView->setSelectionMode(QAbstractItemView::SingleSelection); //Disable for allow user select multiples memory locations by time
+    ui->tblMemoryView->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     
 }
@@ -58,7 +66,7 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
         return;
     }
 
-    DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads, ui->lstModules, ui->lstUnloadedModules };
+    DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads, ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView };
 
     this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
 

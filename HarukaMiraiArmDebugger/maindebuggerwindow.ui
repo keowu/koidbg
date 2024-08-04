@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>910</width>
+    <width>952</width>
     <height>699</height>
    </rect>
   </property>
@@ -17,9 +17,9 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>0</x>
       <y>0</y>
-      <width>911</width>
+      <width>951</width>
       <height>651</height>
      </rect>
     </property>
@@ -33,7 +33,7 @@
      <widget class="QListView" name="lstRegisters">
       <property name="geometry">
        <rect>
-        <x>650</x>
+        <x>690</x>
         <y>20</y>
         <width>251</width>
         <height>381</height>
@@ -43,7 +43,7 @@
      <widget class="QLabel" name="label">
       <property name="geometry">
        <rect>
-        <x>650</x>
+        <x>690</x>
         <y>0</y>
         <width>63</width>
         <height>20</height>
@@ -56,7 +56,7 @@
      <widget class="QLabel" name="label_2">
       <property name="geometry">
        <rect>
-        <x>650</x>
+        <x>690</x>
         <y>400</y>
         <width>63</width>
         <height>20</height>
@@ -69,7 +69,7 @@
      <widget class="QListView" name="lstStack">
       <property name="geometry">
        <rect>
-        <x>650</x>
+        <x>690</x>
         <y>420</y>
         <width>251</width>
         <height>191</height>
@@ -81,7 +81,7 @@
        <rect>
         <x>0</x>
         <y>410</y>
-        <width>641</width>
+        <width>681</width>
         <height>211</height>
        </rect>
       </property>
@@ -114,11 +114,57 @@
      <attribute name="title">
       <string>Call Stack</string>
      </attribute>
+     <widget class="QLabel" name="label_6">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>10</y>
+        <width>511</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Complete Stack Tracing for the current program Context:</string>
+      </property>
+     </widget>
+     <widget class="QListView" name="lstCallStack">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>40</y>
+        <width>891</width>
+        <height>571</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">
       <string>Memory View</string>
      </attribute>
+     <widget class="QLabel" name="label_7">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>10</y>
+        <width>381</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Complete debugee program memory layout:</string>
+      </property>
+     </widget>
+     <widget class="QTableView" name="tblMemoryView">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>40</y>
+        <width>891</width>
+        <height>571</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_3">
      <attribute name="title">
@@ -178,7 +224,7 @@
      <widget class="QLabel" name="label_3">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>0</x>
         <y>10</y>
         <width>281</width>
         <height>20</height>
@@ -226,7 +272,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>910</width>
+     <width>952</width>
      <height>26</height>
     </rect>
    </property>

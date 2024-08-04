@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 28/07/2024
+    Last Update: 04/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -12,20 +12,23 @@
 #include <QMainWindow>
 #include <QStatusBar>
 #include <windows.h>
+#include <QTimer>
+#include <QTableView>
+#include <QStandardItemModel>
 
 class DebugThread {
 
 public:
 
     HANDLE m_hThread;
-    HANDLE m_UniqueProcess;
+    HANDLE m_ThreadID;
     uintptr_t m_lpThreadLocalBase;
     uintptr_t m_lpStartAddress;
     uintptr_t m_teb;
     int m_priorityLevel;
 
-    DebugThread(HANDLE hThread, HANDLE UniqueProcess, uintptr_t lpThreadLocalBase, uintptr_t lpStartAddress, uintptr_t teb, int priorityLevel)
-        : m_hThread(hThread), m_UniqueProcess(UniqueProcess), m_lpThreadLocalBase(lpThreadLocalBase), m_lpStartAddress(lpStartAddress), m_teb(teb), m_priorityLevel(priorityLevel) {};
+    DebugThread(HANDLE hThread, HANDLE ThreadID, uintptr_t lpThreadLocalBase, uintptr_t lpStartAddress, uintptr_t teb, int priorityLevel)
+        : m_hThread(hThread), m_ThreadID(ThreadID), m_lpThreadLocalBase(lpThreadLocalBase), m_lpStartAddress(lpStartAddress), m_teb(teb), m_priorityLevel(priorityLevel) {};
 
     auto getPriorityLevelToString() -> QString {
 
@@ -66,6 +69,8 @@ public:
         QListView* lstThreads;
         QListView* lstModules;
         QListView* lstUnloadedModules;
+        QListView* lstCallStack;
+        QTableView* tblMemoryView;
 
     };
 
@@ -77,6 +82,7 @@ public:
 private:
     std::wstring m_processPath;
     std::pair<STARTUPINFOEXW, PROCESS_INFORMATION> m_processInfo;
+    HANDLE hInternalDebugHandle;
     GuiConfig m_guiCfg;
     BOOL m_StopDbg{FALSE};
     HANDLE m_hDebugLoop;
@@ -109,6 +115,7 @@ private:
     /*
      * Debugger memory manipulation Utils
      */
+    auto AnalyseDebugProcessVirtualMemory() -> void;
     auto ReadMemory(uintptr_t pAddress, unsigned char* ucMemory, size_t szRead) -> bool;
     auto IsPE(uintptr_t pAddress) -> bool;
 

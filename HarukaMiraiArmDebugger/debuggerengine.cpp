@@ -2,7 +2,7 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 28/07/2024
+    Last Update: 04/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -94,7 +94,7 @@ auto DebuggerEngine::InitDebuggeeProcess( ) -> std::pair<STARTUPINFOEXW, PROCESS
         NULL,
         NULL,
         FALSE,
-        DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE | CREATE_SUSPENDED,
+        DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE | CREATE_SUSPENDED,
         NULL,
         NULL,
         &si.StartupInfo,
@@ -195,9 +195,9 @@ auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTIO
 
         qDebug() << "Breakpoint trigged -> " << QString::number(reinterpret_cast<uintptr_t>(info.ExceptionRecord.ExceptionAddress), 16);
 
+        this->AnalyseDebugProcessVirtualMemory();
+
         this->updateRegistersContext(dwTid);
-
-
 
     }
 
@@ -222,10 +222,9 @@ auto DebuggerEngine::handleCreateThreadDebugEvent(const CREATE_THREAD_DEBUG_INFO
 
 
     this->AddStringToListView(this->m_guiCfg.lstThreads, QString(
-                                                            "TID: 0x%1, PID: %2, BASE: 0x%3, START: 0x%4, TEB: 0x%5, PRIORITY: %6"
+                                                            "TID: 0x%1, BASE: 0x%2, START: 0x%3, TEB: 0x%4, PRIORITY: %5"
                                                          ).arg(
-                                                            QString::number(reinterpret_cast<uintptr_t>(dbgThread.m_hThread), 16),
-                                                            QString::number(reinterpret_cast<uintptr_t>(dbgThread.m_UniqueProcess), 10),
+                                                            QString::number(reinterpret_cast<uintptr_t>(dbgThread.m_ThreadID), 10),
                                                             QString::number(dbgThread.m_lpThreadLocalBase, 16),
                                                             QString::number(dbgThread.m_lpStartAddress, 16),
                                                             QString::number(dbgThread.m_teb, 16),
@@ -241,6 +240,8 @@ auto DebuggerEngine::handleCreateProcessDebugEvent(const CREATE_PROCESS_DEBUG_IN
 
     qDebug() << "CREATE_PROCESS_DEBUG_EVENT";
 
+    this->hInternalDebugHandle = info.hProcess;
+
     auto tbi = UtilsWindowsSyscall::GetThreadBasicInformation(info.hThread);
 
     DebugThread dbgThread(
@@ -255,10 +256,9 @@ auto DebuggerEngine::handleCreateProcessDebugEvent(const CREATE_PROCESS_DEBUG_IN
     );
 
     this->AddStringToListView(this->m_guiCfg.lstThreads, QString(
-                                                             "[MAIN THREAD] TID: 0x%1, PID: %2, BASE: 0x%3, START: 0x%4, TEB: 0x%5, PRIORITY: %6"
+                                                             "[MAIN THREAD] TID: %1, BASE: 0x%2, START: 0x%3, TEB: 0x%4, PRIORITY: %5"
                                                              ).arg(
-                                                                 QString::number(reinterpret_cast<uintptr_t>(dbgThread.m_hThread), 16),
-                                                                 QString::number(reinterpret_cast<uintptr_t>(dbgThread.m_UniqueProcess), 10),
+                                                                 QString::number(reinterpret_cast<uintptr_t>(dbgThread.m_ThreadID), 16),
                                                                  QString::number(dbgThread.m_lpThreadLocalBase, 16),
                                                                  QString::number(dbgThread.m_lpStartAddress, 16),
                                                                  QString::number(dbgThread.m_teb, 16),
@@ -366,6 +366,7 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
     auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, dwTID);
 
+
     #if defined(__aarch64__) || defined(_M_ARM64)
 
         ARM64_NT_CONTEXT context;
@@ -437,9 +438,21 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
         }
 
-        this->AddStringToListView(this->m_guiCfg.lstRegisters, QString::asprintf("%08X", context.Cpsr));
+        this->AddStringToListView(this->m_guiCfg.lstRegisters, QString::asprintf("CPSR: %08X", context.Cpsr));
 
         //TODO: Explorar demais registradores diponíveis, ELR, SPSR, BCR etc
+
+        auto callstack = UtilsWindowsSyscall::updateCallStackContext(
+
+            this->hInternalDebugHandle,
+            hThread,
+            context.Pc,
+            context.Fp,
+            context.Sp,
+            &context,
+            IMAGE_FILE_MACHINE_ARM64
+
+        );
 
     #elif defined(__x86_64__) || defined(_M_X64)
 
@@ -478,7 +491,7 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
         for (const auto& [regName, regValue] : generalPurposeRegisters) {
 
-            AddStringToListView(
+            this->AddStringToListView(
 
                 this->m_guiCfg.lstRegisters,
 
@@ -555,7 +568,7 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
         for (const auto& [regName, regValue] : debugRegisters) {
 
-            AddStringToListView(
+            this->AddStringToListView(
 
                 this->m_guiCfg.lstRegisters,
 
@@ -564,21 +577,74 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
                     regName,
                     regValue
                     )
-                );
+            );
 
         }
 
         //TODO: PROGRAMAR REGISTRADORES YMM, EXPLORAR TODOS OS REGISTRADORES DISPONÍVEIS NA CONTEXT
 
+        auto callstack = UtilsWindowsSyscall::updateCallStackContext(
+
+            this->hInternalDebugHandle,
+            hThread,
+            context.Rip,
+            context.Rbp,
+            context.Rsp,
+            &context,
+            IMAGE_FILE_MACHINE_AMD64
+
+        );
+
     #else
         qDebug() << "Unsuported Processor, hows this guy running it ? is your moding our software ? request support for this processor via formal support!";
     #endif
 
+    this->AddStringToListView(
+
+        this->m_guiCfg.lstCallStack,
+        QString::asprintf(
+
+            "[Current] CallStack Tracing for TID: 0x%08llX",
+            GetThreadId(hThread)
+
+        )
+
+    );
+
+    for (auto i = 0; i < callstack.first.size(); i++) {
+
+        this->AddStringToListView(
+
+            this->m_guiCfg.lstCallStack,
+
+            "           " + callstack.second[i] + QString::asprintf(
+            "@0x%016llX",
+            callstack.first[i]
+
+            )
+
+        );
+
+    }
+
     this->updateStackContext(dwTID);
+
+    //Sending event after the list is properly rendered on the screen to adjust stack midle
+    auto listView = this->m_guiCfg.lstStack;
+    QAbstractItemModel *model = m_guiCfg.lstStack->model();
+    QMetaObject::invokeMethod(listView, [listView, &model]() {
+
+            QModelIndex index = model->index(512, 0);
+
+            listView->scrollTo(index, QAbstractItemView::PositionAtCenter);
+
+        }, Qt::QueuedConnection);
 
 }
 
 auto DebuggerEngine::updateStackContext(const DWORD dwTID) -> void {
+
+    uintptr_t ptrStackPointer{ 0 }, AddressModeSize{ 0 };
 
     auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, dwTID);
 
@@ -596,11 +662,6 @@ auto DebuggerEngine::updateStackContext(const DWORD dwTID) -> void {
             return;
         }
 
-        //Renderizar a stack:
-        //0xFFFF -> - endereço de SP lendo cada endereço de 8 bytes
-        //valor de SP -> -ler o endereço e representar
-        //0xFFFF -> + endereço de SP lendo cada endereço de 8 bytes
-
         this->AddStringToListView(
 
             this->m_guiCfg.lstStack,
@@ -611,6 +672,9 @@ auto DebuggerEngine::updateStackContext(const DWORD dwTID) -> void {
                 )
 
         );
+
+        ptrStackPointer = context.Sp;
+        AddressModeSize = 8;
 
     #elif defined(__x86_64__) || defined(_M_X64)
 
@@ -626,65 +690,151 @@ auto DebuggerEngine::updateStackContext(const DWORD dwTID) -> void {
             return;
         }
 
-        //TODO: STACK VIEW IS SLOW, MAKE THIS MORE FASTER
-        //Renderizar a stack:
-        //0xFFFF -> - endereço de RSP lendo cada endereço de 8 bytes
-        //valor de RSP -> -ler o endereço e representar
-        //0xFFFF -> + endereço de RSP lendo cada endereço de 8 bytes
-        auto endValue = context.Rsp - 0x0FFF;
-        for (auto i = context.Rsp; i >= endValue; i -= 8) {
-            uintptr_t ptrStack{ 0 };
-            ReadMemory(i, reinterpret_cast<unsigned char*>(&ptrStack), sizeof(uintptr_t));
+        ptrStackPointer = context.Rsp;
+        AddressModeSize = 8;
 
-            this->AddStringToListView(
-                this->m_guiCfg.lstStack,
-                QString::asprintf(
-                    "0x%016llX | 0x%016llX",
-                    i,
-                    ptrStack
-                    )
-                );
-        }
+    #else
+    #endif
+
+    //Renderizar a stack:
+    //0xFFA -> - endereço de RSP lendo cada endereço de 8 bytes
+    //valor de RSP -> -ler o endereço e representar
+    //0xFFA -> + endereço de RSP lendo cada endereço de 8 bytes
+    auto endValue = ptrStackPointer - 0xFFA; //Último endereço multiplo de 8
+        for (auto i = endValue; i <= ptrStackPointer; i += AddressModeSize) {
+        uintptr_t ptrStack{ 0 };
+        ReadMemory(i+2, reinterpret_cast<unsigned char*>(&ptrStack), sizeof(uintptr_t)); // i Tem dois bytes de diferença na leitura.
+
+        QString str = UtilsWindowsSyscall::symbol_from_address(this->hInternalDebugHandle, ptrStack);
 
         this->AddStringToListView(
             this->m_guiCfg.lstStack,
             QString::asprintf(
-                "[RSP-POINTER]0x%016llX",
-                context.Rsp
-                )
+                "0x%016llX | 0x%016llX",
+                i,
+                ptrStack
+                ) + str
             );
 
-        //QAbstractItemModel *model = m_guiCfg.lstStack->model();
+    }
 
-        m_guiCfg.lstStack->reset();
+    this->AddStringToListView(
+        this->m_guiCfg.lstStack,
+        QString::asprintf(
+            "[SP-POINTER]0x%016llX",
+            ptrStackPointer
+        )
+    );
 
-        //int rowCount = model->rowCount();
+    for (auto i = ptrStackPointer; i < ptrStackPointer + 0xFFA; i += AddressModeSize) {
+        uintptr_t ptrStack{ 0 };
+        ReadMemory(i, reinterpret_cast<unsigned char*>(&ptrStack), sizeof(uintptr_t));
 
-        for (auto i = context.Rsp; i < context.Rsp + 0x0FFF; i += 8) {
-            uintptr_t ptrStack{ 0 };
-            ReadMemory(i, reinterpret_cast<unsigned char*>(&ptrStack), sizeof(uintptr_t));
+        QString str = UtilsWindowsSyscall::symbol_from_address(this->hInternalDebugHandle, ptrStack);
 
-            this->AddStringToListView(
-                this->m_guiCfg.lstStack,
-                QString::asprintf(
-                    "0x%016llX | 0x%016llX",
-                    i,
-                    ptrStack
-                    )
-                );
-        }
+        this->AddStringToListView(
+            this->m_guiCfg.lstStack,
+            QString::asprintf(
+                "0x%016llX | 0x%016llX",
+                i,
+                ptrStack
+            ) + str
+        );
+    }
 
-        /*auto index = model->index(rowCount, 0);
+}
 
-        if (!index.isValid()) {
-            qWarning() << "Invalid QModelIndex.";
+auto DebuggerEngine::AnalyseDebugProcessVirtualMemory() -> void {
+
+    auto GetMemoryType = [](DWORD dwType) -> QString {
+
+        if (dwType & MEM_PRIVATE) return "Private";
+        else if (dwType & MEM_MAPPED) return "Mapped";
+        else if (dwType & MEM_IMAGE) return "Image";
+
+        return "Unknown";
+    };
+
+    auto GetMemoryState = [](DWORD dwState) -> QString {
+
+        if (dwState & MEM_COMMIT) return "Commit";
+        else if (dwState & MEM_RESERVE) return "Reserved";
+        else if (dwState & MEM_FREE) return "Free";
+        return "Unknown";
+
+    };
+
+    auto GetMemoryProtection = [](DWORD dwProtection) -> QString {
+
+        QString str = "";
+
+        if (dwProtection & PAGE_NOACCESS) str = "NA";
+        else if (dwProtection & PAGE_READONLY) str = "R";
+        else if (dwProtection & PAGE_READWRITE) str = "RW";
+        else if (dwProtection & PAGE_WRITECOPY) str = "WC";
+        else if (dwProtection & PAGE_EXECUTE) str = "X";
+        else if (dwProtection & PAGE_EXECUTE_READ) str = "RX";
+        else if (dwProtection & PAGE_EXECUTE_READWRITE) str = "RWX";
+        else if (dwProtection & PAGE_EXECUTE_WRITECOPY) str = "WCX";
+        else str = "?";
+
+        if (dwProtection & PAGE_GUARD) str += "+G";
+
+        if (dwProtection & PAGE_NOCACHE) str += "+NC";
+
+        if (dwProtection & PAGE_WRITECOMBINE) str += "+WCM";
+
+        return str;
+
+    };
+
+    QStandardItemModel* model;
+
+    if (!this->m_guiCfg.tblMemoryView->model()) {
+        model = new QStandardItemModel();
+
+        this->m_guiCfg.tblMemoryView->setModel(model);
+
+        model->setHorizontalHeaderLabels(QStringList() << "Base Address" << "Mapped File Name");
+    } else {
+        model = qobject_cast<QStandardItemModel*>(this->m_guiCfg.tblMemoryView->model());
+
+        if (!model) {
+            qDebug() << "The model is not of type QStandardItemModel!";
             return;
         }
+    }
 
-        this->m_guiCfg.lstStack->scrollTo(index); //Error: IDK WHY, the size of midle stack are correct, and are not bigger than expected one.
-        */
+    model->clear();
 
-    #else
-    #endif
+    model->setHorizontalHeaderLabels(QStringList() << "Start Address" << "Size" << "Information" << "Type" << "State" << "Protection");
+
+    WCHAR wchInformation[MAX_PATH]{ 0 };
+    MEMORY_BASIC_INFORMATION mb{0};
+    uintptr_t uipStartAddress{ 0 };
+    while (VirtualQueryEx(this->hInternalDebugHandle, reinterpret_cast<LPVOID>(uipStartAddress), &mb, sizeof(mb))) {
+
+        GetMappedFileNameW(this->hInternalDebugHandle, reinterpret_cast<LPVOID>(uipStartAddress), wchInformation, sizeof(wchInformation));
+
+        /*
+         * Checking for X64 and ARM64 KUSER_SHARED_DATA_ADDRESS
+         * https://redplait.blogspot.com/2020/04/pskernelrangelist-on-arm64-kernel.html
+         * https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ns-ntddk-kuser_shared_data
+         */
+        if (uipStartAddress == 0x7FFE0000) wcscpy_s(wchInformation, MAX_PATH, L"KUSER_SHARED_DATA");
+        else if (uipStartAddress == 0x7FFED000) wcscpy_s(wchInformation, MAX_PATH, L"HYPERVISOR_SHARED_DATA");
+
+        if (uipStartAddress != 0)
+            model->appendRow(QList<QStandardItem*>() << new QStandardItem(QString::number(reinterpret_cast<uintptr_t>(mb.BaseAddress), 16).toUpper())
+                                                     << new QStandardItem(QString::number(mb.RegionSize, 16).toUpper())
+                                                     << new QStandardItem(QString(wchInformation))
+                                                     << new QStandardItem(GetMemoryType(mb.Type))
+                                                     << new QStandardItem(GetMemoryState(mb.State))
+                                                     << new QStandardItem(GetMemoryProtection(mb.Protect))
+            );
+
+        uipStartAddress += mb.RegionSize;
+        std::memset(wchInformation, 0, MAX_PATH);
+    }
 
 }

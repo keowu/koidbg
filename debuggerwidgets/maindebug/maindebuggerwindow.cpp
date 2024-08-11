@@ -2,14 +2,14 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 04/08/2024
+    Last Update: 08/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
 #include "maindebuggerwindow.h"
 #include "./ui_maindebuggerwindow.h"
-#include "attachprocesswindow.h"
-#include "disassemblerengine.h"
+#include "debuggerwidgets/attachprocess/attachprocesswindow.h"
+#include "disassemblerengine/disassemblerengine.h"
 #include <windows.h>
 #include <QDebug>
 #include <QFileDialog>
@@ -22,7 +22,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
 
     /*
      *  Disable MAXIMIZE Button and Disable FORM Resizing
-     */
+    */
     setWindowFlags(windowFlags() & ~Qt::WindowMaximizeButtonHint);
     setWindowFlags(Qt::MSWindowsFixedSizeDialogHint);
 
@@ -47,11 +47,12 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->tblMemoryView->setEditTriggers( QAbstractItemView::NoEditTriggers );
 
     /*
-     * Memory View Selection policy
+     * Memory View/Handles Selection policy
      */
     ui->tblMemoryView->setSelectionMode(QAbstractItemView::SingleSelection); //Disable for allow user select multiples memory locations by time
     ui->tblMemoryView->setSelectionBehavior(QAbstractItemView::SelectRows);
-
+    ui->tblHandles->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->tblHandles->setSelectionBehavior(QAbstractItemView::SelectRows);
     
 }
 
@@ -66,7 +67,10 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
         return;
     }
 
-    DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads, ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView };
+    DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
+                                      ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
+                                     ui->tblHandles
+    };
 
     this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
 

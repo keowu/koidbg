@@ -5,19 +5,29 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++17
 
 SOURCES += \
-    attachprocesswindow.cpp \
-    debuggerengine.cpp \
-    disassemblerengine.cpp \
+    debuggerengine/debugbreakpoint.cpp \
+    debuggerengine/debughandle.cpp \
+    debuggerengine/debugmemory.cpp \
+    debuggerengine/debugmodule.cpp \
+    debuggerengine/debugthread.cpp \
+    debuggerwidgets/attachprocess/attachprocesswindow.cpp \
+    debuggerengine/debuggerengine.cpp \
+    disassemblerengine/disassemblerengine.cpp \
     main.cpp \
-    maindebuggerwindow.cpp \
-    utilswindowssyscall.cpp
+    debuggerwidgets/maindebug/maindebuggerwindow.cpp \
+    debuggerutils/utilswindowssyscall.cpp
 
 HEADERS += \
-    DebuggerEngine.h \
-    attachprocesswindow.h \
-    disassemblerengine.h \
-    maindebuggerwindow.h \
-    utilswindowssyscall.h
+    debuggerengine/DebuggerEngine.h \
+    debuggerengine/debugbreakpoint.h \
+    debuggerengine/debughandle.h \
+    debuggerengine/debugmemory.h \
+    debuggerengine/debugmodule.h \
+    debuggerengine/debugthread.h \
+    debuggerwidgets/attachprocess/attachprocesswindow.h \
+    disassemblerengine/disassemblerengine.h \
+    debuggerwidgets/maindebug/maindebuggerwindow.h \
+    debuggerutils/utilswindowssyscall.h
 
 LIBS += -lwtsapi32
 LIBS += -lAdvapi32
@@ -37,8 +47,8 @@ LIBS += -L$$PWD/capstone/lib/x64 -lcapstone_dll_x64
 QMAKE_LFLAGS_WINDOWS = /NODEFAULTLIB:LIBCMT
 
 FORMS += \
-    attachprocesswindow.ui \
-    maindebuggerwindow.ui
+    debuggerwidgets/attachprocess/attachprocesswindow.ui \
+    debuggerwidgets/maindebug/maindebuggerwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -2,13 +2,13 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 04/08/2024
+    Last Update: 09/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
 #include "debuggerengine.h"
 #include "qstringlistmodel.h"
-#include "utilswindowssyscall.h"
+#include "debuggerutils/utilswindowssyscall.h"
 
 auto DebuggerEngine::AddStringToListView(QListView* list, QString stringArgument) -> void {
 
@@ -152,7 +152,7 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
                 thiz->handleExitThreadDebugEvent(dbgEvent.u.ExitThread);
                 break;
             case EXIT_PROCESS_DEBUG_EVENT:
-                thiz->handleExitProcessDebugEvent(dbgEvent.u.ExitProcess);
+                thiz->handleExitProcessDebugEvent(dbgEvent.dwThreadId, dbgEvent.u.ExitProcess);
                 thiz->m_StopDbg = true;
                 break;
             case LOAD_DLL_DEBUG_EVENT:
@@ -195,9 +195,11 @@ auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTIO
 
         qDebug() << "Breakpoint trigged -> " << QString::number(reinterpret_cast<uintptr_t>(info.ExceptionRecord.ExceptionAddress), 16);
 
-        this->AnalyseDebugProcessVirtualMemory();
+        //Delete all old context
+        this->DeleteAllDebuggerContext(dwTid);
 
-        this->updateRegistersContext(dwTid);
+        //Reupdate new context
+        this->UpdateAllDebuggerContext(dwTid);
 
     }
 
@@ -276,9 +278,15 @@ auto DebuggerEngine::handleExitThreadDebugEvent(const EXIT_THREAD_DEBUG_INFO& in
 
 }
 
-auto DebuggerEngine::handleExitProcessDebugEvent(const EXIT_PROCESS_DEBUG_INFO& info) -> void {
+auto DebuggerEngine::handleExitProcessDebugEvent(const DWORD dwTid, const EXIT_PROCESS_DEBUG_INFO& info) -> void {
 
     qDebug() << "EXIT_PROCESS_DEBUG_EVENT";
+
+    //Delete all old context
+    this->DeleteAllDebuggerContext(dwTid);
+
+    //Reupdate new context
+    this->UpdateAllDebuggerContext(dwTid);
 
 }
 
@@ -347,6 +355,47 @@ auto DebuggerEngine::handleRipEvent(const RIP_INFO& info) -> void {
 
 }
 
+auto DebuggerEngine::UpdateAllDebuggerContext(const DWORD dwTID) -> void {
+
+    qDebug() << "DebuggerEngine::UpdateAllDebuggerContext";
+
+    this->ListAllHandleObjectsForDebugeeProcess();
+
+    this->AnalyseDebugProcessVirtualMemory();
+
+    this->updateRegistersContext(dwTID);
+
+}
+
+auto DebuggerEngine::DeleteAllDebuggerContext(const DWORD dwTID) -> void {
+
+    //TODO DELETE ALL THE OLD CONTEXT AND MODELS OF GRIDS, VECTORS ETC FOR MEMORY, HANDLES, STACK, REGISTERS ETC.
+
+    qDebug() << "DebuggerEngine::DeleteAllDebuggerContext";
+
+    // Deleting old registers context
+    QStandardItemModel* registerModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstRegisters->model());
+
+    if (registerModel) registerModel->clear();
+    else {
+
+        registerModel = new QStandardItemModel();
+        this->m_guiCfg.lstRegisters->setModel(registerModel);
+
+    }
+
+    // Deleting
+    QStandardItemModel* stackModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstStack->model());
+
+    if (stackModel) stackModel->clear();
+    else {
+
+        stackModel = new QStandardItemModel();
+        this->m_guiCfg.lstStack->setModel(stackModel);
+
+    }
+
+}
 
 auto DebuggerEngine::ReadMemory(uintptr_t pAddress, unsigned char* ucMemory, size_t szRead) -> bool {
 
@@ -604,7 +653,7 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
         this->m_guiCfg.lstCallStack,
         QString::asprintf(
 
-            "[Current] CallStack Tracing for TID: 0x%08llX",
+            "CallStack Tracing for TID: 0x%08llX",
             GetThreadId(hThread)
 
         )
@@ -631,14 +680,19 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
     //Sending event after the list is properly rendered on the screen to adjust stack midle
     auto listView = this->m_guiCfg.lstStack;
-    QAbstractItemModel *model = m_guiCfg.lstStack->model();
-    QMetaObject::invokeMethod(listView, [listView, &model]() {
+    QAbstractItemModel* model = listView->model();
 
-            QModelIndex index = model->index(512, 0);
+    // Run on a new thread with QtConcurrent::run to avoid pointer shit leak
+    QThreadPool::globalInstance()->start([listView, model]() {
 
-            listView->scrollTo(index, QAbstractItemView::PositionAtCenter);
+        QMetaObject::invokeMethod(listView, [listView, model]() {
 
-        }, Qt::QueuedConnection);
+                QModelIndex index = model->index(512, 0);
+                listView->scrollTo(index, QAbstractItemView::PositionAtCenter);
+
+            }, Qt::QueuedConnection);
+
+    });
 
 }
 
@@ -809,6 +863,7 @@ auto DebuggerEngine::AnalyseDebugProcessVirtualMemory() -> void {
 
     model->setHorizontalHeaderLabels(QStringList() << "Start Address" << "Size" << "Information" << "Type" << "State" << "Protection");
 
+    BOOL bHvSharedData = TRUE;
     WCHAR wchInformation[MAX_PATH]{ 0 };
     MEMORY_BASIC_INFORMATION mb{0};
     uintptr_t uipStartAddress{ 0 };
@@ -822,19 +877,79 @@ auto DebuggerEngine::AnalyseDebugProcessVirtualMemory() -> void {
          * https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ns-ntddk-kuser_shared_data
          */
         if (uipStartAddress == 0x7FFE0000) wcscpy_s(wchInformation, MAX_PATH, L"KUSER_SHARED_DATA");
-        else if (uipStartAddress == 0x7FFED000) wcscpy_s(wchInformation, MAX_PATH, L"HYPERVISOR_SHARED_DATA");
 
-        if (uipStartAddress != 0)
-            model->appendRow(QList<QStandardItem*>() << new QStandardItem(QString::number(reinterpret_cast<uintptr_t>(mb.BaseAddress), 16).toUpper())
-                                                     << new QStandardItem(QString::number(mb.RegionSize, 16).toUpper())
-                                                     << new QStandardItem(QString(wchInformation))
-                                                     << new QStandardItem(GetMemoryType(mb.Type))
-                                                     << new QStandardItem(GetMemoryState(mb.State))
-                                                     << new QStandardItem(GetMemoryProtection(mb.Protect))
+        //HYPERVISOR_SHARED_DATA on X86_64
+        //HYPERVISOR_SHARED_DATA on ARM64
+        // The logic is dicovery true and the second size with 4 kb for the page.
+        else if (bHvSharedData && mb.RegionSize/1000 == 4) {
+
+            wcscpy_s(wchInformation, MAX_PATH, L"HYPERVISOR_SHARED_DATA");
+
+            bHvSharedData = FALSE;
+        }
+
+        if (uipStartAddress != 0) {
+
+            DebugMemory dbgMem(reinterpret_cast<uintptr_t>(mb.BaseAddress), QString(wchInformation), GetMemoryType(mb.Type), GetMemoryState(mb.State), GetMemoryProtection(mb.Protect), mb.RegionSize/1000);
+
+            model->appendRow(QList<QStandardItem*>() << new QStandardItem(QString::number(dbgMem.m_uipStartAddress, 16).toUpper())
+                                                     << new QStandardItem(QString::number(dbgMem.m_szPage, 10).toUpper() + " KB")
+                                                     << new QStandardItem(QString(dbgMem.m_strInformation))
+                                                     << new QStandardItem(dbgMem.m_strType)
+                                                     << new QStandardItem(dbgMem.m_strState)
+                                                     << new QStandardItem(dbgMem.m_strProtection)
             );
+
+            this->m_debugMemory.push_back(dbgMem);
+
+        }
 
         uipStartAddress += mb.RegionSize;
         std::memset(wchInformation, 0, MAX_PATH);
+    }
+
+}
+
+auto DebuggerEngine::ListAllHandleObjectsForDebugeeProcess() -> void {
+
+    QStandardItemModel* model;
+
+    if (!this->m_guiCfg.tblHandles->model()) {
+        model = new QStandardItemModel();
+
+        this->m_guiCfg.tblHandles->setModel(model);
+
+    } else {
+        model = qobject_cast<QStandardItemModel*>(this->m_guiCfg.tblHandles->model());
+
+        if (!model) {
+            qDebug() << "The model is not of type QStandardItemModel!";
+            return;
+        }
+    }
+
+    model->clear();
+
+    model->setHorizontalHeaderLabels(QStringList() << "Handle" << "Type" << "Name");
+
+    auto vecDebugerHandles = UtilsWindowsSyscall::GetDebuggerProcessHandleTable(this->m_processInfo.second.dwProcessId);
+
+    for (auto handle : vecDebugerHandles) {
+
+        auto [handleOriginal, typeLength, typeBuffer, nameLength, nameBuffer] = UtilsWindowsSyscall::GetRemoteHandleTableHandleInformation(this->m_processInfo.second.dwProcessId, handle);
+
+        DebugHandle dbgHandle(handleOriginal, QString(typeBuffer), QString(nameBuffer), typeLength, nameLength);
+
+        //Checking for invalid handles, not duplicated and with no info or errors.
+        if (dbgHandle.m_hValue == INVALID_HANDLE_VALUE) continue;
+
+        model->appendRow(QList<QStandardItem*>() << new QStandardItem(QString::number(reinterpret_cast<uintptr_t>(handleOriginal), 16).toUpper())
+                                                 << new QStandardItem(QString(typeBuffer))
+                                                 << new QStandardItem(QString(nameBuffer))
+        );
+
+        this->m_debugHandles.push_back(dbgHandle);
+
     }
 
 }

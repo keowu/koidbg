@@ -80,9 +80,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>410</y>
+        <y>450</y>
         <width>681</width>
-        <height>211</height>
+        <height>171</height>
        </rect>
       </property>
       <property name="currentIndex">
@@ -104,11 +104,49 @@
        </attribute>
       </widget>
      </widget>
+     <widget class="QTableView" name="tblDisasmVw">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>681</width>
+        <height>451</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_14">
+     <attribute name="title">
+      <string>Debugger Automation</string>
+     </attribute>
     </widget>
     <widget class="QWidget" name="tab_7">
      <attribute name="title">
       <string>HW&amp;SFT Interrupt</string>
      </attribute>
+     <widget class="QLabel" name="label_9">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>10</y>
+        <width>291</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Software and Hardware Interrupting List:</string>
+      </property>
+     </widget>
+     <widget class="QTableView" name="tblInterrupts">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>40</y>
+        <width>931</width>
+        <height>571</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_8">
      <attribute name="title">
@@ -124,7 +162,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Complete Stack Tracing for the current program Context:</string>
+       <string>Most Important Stack Tracing for the current program Context:</string>
       </property>
      </widget>
      <widget class="QListView" name="lstCallStack">
@@ -132,7 +170,7 @@
        <rect>
         <x>0</x>
         <y>40</y>
-        <width>891</width>
+        <width>931</width>
         <height>571</height>
        </rect>
       </property>
@@ -160,7 +198,7 @@
        <rect>
         <x>0</x>
         <y>40</y>
-        <width>891</width>
+        <width>931</width>
         <height>571</height>
        </rect>
       </property>
@@ -175,7 +213,7 @@
        <rect>
         <x>0</x>
         <y>40</y>
-        <width>891</width>
+        <width>931</width>
         <height>271</height>
        </rect>
       </property>
@@ -211,7 +249,7 @@
        <rect>
         <x>0</x>
         <y>350</y>
-        <width>891</width>
+        <width>931</width>
         <height>261</height>
        </rect>
       </property>
@@ -239,7 +277,7 @@
        <rect>
         <x>0</x>
         <y>50</y>
-        <width>891</width>
+        <width>931</width>
         <height>561</height>
        </rect>
       </property>
@@ -249,6 +287,29 @@
      <attribute name="title">
       <string>Handles</string>
      </attribute>
+     <widget class="QLabel" name="label_8">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>10</y>
+        <width>361</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Completely Handle table for the debuggee process:</string>
+      </property>
+     </widget>
+     <widget class="QTableView" name="tblHandles">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>40</y>
+        <width>931</width>
+        <height>561</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_13">
      <attribute name="title">

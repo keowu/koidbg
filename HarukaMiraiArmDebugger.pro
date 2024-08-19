@@ -26,6 +26,7 @@ HEADERS += \
     debuggerengine/debugthread.h \
     debuggerwidgets/attachprocess/attachprocesswindow.h \
     disassemblerengine/disassemblerengine.h \
+    disassemblerengine/disassemblerutils.h \
     debuggerwidgets/maindebug/maindebuggerwindow.h \
     debuggerutils/utilswindowssyscall.h
 

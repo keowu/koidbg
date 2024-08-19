@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/08/2024
+    Last Update: 14/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -10,6 +10,7 @@
 #define MAINDEBUGGERWINDOW_H
 
 #include <QMainWindow>
+#include <QHeaderView>
 #include "debuggerengine/DebuggerEngine.h"
 
 QT_BEGIN_NAMESPACE

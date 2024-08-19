@@ -2,14 +2,13 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/08/2024
+    Last Update: 14/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
 #include "maindebuggerwindow.h"
 #include "./ui_maindebuggerwindow.h"
 #include "debuggerwidgets/attachprocess/attachprocesswindow.h"
-#include "disassemblerengine/disassemblerengine.h"
 #include <windows.h>
 #include <QDebug>
 #include <QFileDialog>
@@ -45,14 +44,24 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->lstUnloadedModules->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->lstCallStack->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->tblMemoryView->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->tblHandles->setEditTriggers( QAbstractItemView::NoEditTriggers );
+     ui->tblDisasmVw->setEditTriggers( QAbstractItemView::NoEditTriggers );
 
     /*
-     * Memory View/Handles Selection policy
+     * Memory View/Handles Selection policy, and Vertical Header configuration
      */
     ui->tblMemoryView->setSelectionMode(QAbstractItemView::SingleSelection); //Disable for allow user select multiples memory locations by time
     ui->tblMemoryView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tblHandles->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->tblHandles->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tblDisasmVw->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->tblDisasmVw->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    ////////////////////////////////////////////////////////////
+    /// FIX THIS URGENTLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    /// find alternatives or just remove.
+    ui->tblDisasmVw->verticalHeader()->setVisible(false); //-> Identify if this is really crashing the application when loading a new debuggee proccess on engine.
+    ////////////////////////////////////////////////////////////
     
 }
 
@@ -69,15 +78,11 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
 
     DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
                                       ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
-                                     ui->tblHandles
+                                     ui->tblHandles, ui->tblDisasmVw
     };
 
     this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
 
-    //Testing
-    DisassemblerEngine *disasm = new DisassemblerEngine();
-    disasm->TestCapstoneEngine();
-    delete disasm;
 }
 
 void MainDebuggerWindow::onAttachProcessClicked() {

@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 12/08/2024
+    Last Update: 18/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -19,6 +19,7 @@
 #include <windows.h>
 #include <QTimer>
 #include <QTableView>
+#include <QHeaderView>
 #include <QStandardItemModel>
 #include <QtConcurrent/QtConcurrent>
 
@@ -37,6 +38,7 @@ public:
         QListView* lstCallStack;
         QTableView* tblMemoryView;
         QTableView* tblHandles;
+        QTableView* tblDisasmVw;
 
     };
 
@@ -114,6 +116,11 @@ private:
      */
     auto UpdateAllDebuggerContext(const DWORD dwTID) -> void;
     auto DeleteAllDebuggerContext(const DWORD dwTID) -> void;
+
+    /*
+     * Update Disassembler View for the user
+     */
+    auto UpdateDisassemblerView(const DWORD dwTID) -> void;
 
 };
 

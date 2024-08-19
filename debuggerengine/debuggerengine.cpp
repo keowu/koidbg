@@ -2,12 +2,13 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 09/08/2024
+    Last Update: 18/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
 #include "debuggerengine.h"
 #include "qstringlistmodel.h"
+#include "disassemblerengine/disassemblerengine.h"
 #include "debuggerutils/utilswindowssyscall.h"
 
 auto DebuggerEngine::AddStringToListView(QListView* list, QString stringArgument) -> void {
@@ -365,6 +366,8 @@ auto DebuggerEngine::UpdateAllDebuggerContext(const DWORD dwTID) -> void {
 
     this->updateRegistersContext(dwTID);
 
+    this->UpdateDisassemblerView(dwTID);
+
 }
 
 auto DebuggerEngine::DeleteAllDebuggerContext(const DWORD dwTID) -> void {
@@ -373,7 +376,9 @@ auto DebuggerEngine::DeleteAllDebuggerContext(const DWORD dwTID) -> void {
 
     qDebug() << "DebuggerEngine::DeleteAllDebuggerContext";
 
+    //__________________________________________________________________________________________________________
     // Deleting old registers context
+    //__________________________________________________________________________________________________________
     QStandardItemModel* registerModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstRegisters->model());
 
     if (registerModel) registerModel->clear();
@@ -383,8 +388,11 @@ auto DebuggerEngine::DeleteAllDebuggerContext(const DWORD dwTID) -> void {
         this->m_guiCfg.lstRegisters->setModel(registerModel);
 
     }
+    //__________________________________________________________________________________________________________
 
-    // Deleting
+    //__________________________________________________________________________________________________________
+    // Deleting old stack context
+    //__________________________________________________________________________________________________________
     QStandardItemModel* stackModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstStack->model());
 
     if (stackModel) stackModel->clear();
@@ -394,6 +402,90 @@ auto DebuggerEngine::DeleteAllDebuggerContext(const DWORD dwTID) -> void {
         this->m_guiCfg.lstStack->setModel(stackModel);
 
     }
+    //__________________________________________________________________________________________________________
+
+    //__________________________________________________________________________________________________________
+    /* Deleting old Disassembler View context
+     *
+     * If you're wodering why we do not clean Disassembler View Context
+     * this is done when a new UpdateDisassemblerView get called, the old context is automatic discarted, and we do not need to recreate it
+     * like was done with ListViews QWidgets.
+     * Two moments that Disassembler View context get discarted:
+     *  - By the UpdateDisassemblerView itself
+     *  - By ending the debugger session, on cleanup and deleting debugengine object and recreating a new one.
+     */
+    //__________________________________________________________________________________________________________
+
+}
+
+auto DebuggerEngine::UpdateDisassemblerView(const DWORD dwTID) -> void {
+
+    QStandardItemModel* model;
+
+    if (!this->m_guiCfg.tblDisasmVw->model()) {
+        model = new QStandardItemModel();
+
+        this->m_guiCfg.tblDisasmVw->setModel(model);
+
+    } else {
+        model = qobject_cast<QStandardItemModel*>(this->m_guiCfg.tblDisasmVw->model());
+
+        if (!model) {
+            qDebug() << "The model is not of type QStandardItemModel!";
+            return;
+        }
+    }
+
+    model->clear();
+
+    model->setHorizontalHeaderLabels(QStringList() << "Address" << "Opcode" << "Disasm" << "Anotations");
+
+    //Definindo lógica:
+    //Disassemblar toda a seção do endereço de RIP/IP
+    //Disassemblar apenas alguns trechos
+    //Disassemblar conforme identifica o tamanho de funções
+    CONTEXT ctx;
+
+    ZeroMemory(&ctx, sizeof(CONTEXT));
+    ctx.ContextFlags = CONTEXT_ALL;
+
+    auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, dwTID);
+
+    GetThreadContext(hThread, &ctx);
+
+    DisassemblerEngine *disasm = new DisassemblerEngine();
+
+    size_t szOpcodes = 2048;
+    auto ucOpcodes = new unsigned char[2048]{ 0 }; //Sem zerar bytes
+
+    //Separar coisas relacionadas a memory em namespaces separadas
+    this->ReadMemory(ctx.Rip, ucOpcodes, szOpcodes);
+
+    DisasmEngineConfig dbgCfg{
+
+        model,
+        this->hInternalDebugHandle,
+        this->m_guiCfg.tblDisasmVw
+
+    };
+
+    disasm->RunCapstoneEnginex86(ctx.Rip, ucOpcodes, szOpcodes, dbgCfg);
+
+    delete disasm;
+    delete []ucOpcodes;
+
+    CloseHandle(hThread);
+
+    /*
+     * Adjust Columns and Rows Sizes
+    */
+    this->m_guiCfg.tblDisasmVw->resizeColumnsToContents();
+
+    this->m_guiCfg.tblDisasmVw->resizeRowsToContents();
+
+    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(2, 360); //Disasm Column Display
+
+    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(1, 100); //Opcodes Column Display
 
 }
 
@@ -414,7 +506,6 @@ auto DebuggerEngine::IsPE(uintptr_t pAddress) -> bool {
 auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
     auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, dwTID);
-
 
     #if defined(__aarch64__) || defined(_M_ARM64)
 
@@ -694,6 +785,7 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
     });
 
+    CloseHandle(hThread);
 }
 
 auto DebuggerEngine::updateStackContext(const DWORD dwTID) -> void {
@@ -795,6 +887,8 @@ auto DebuggerEngine::updateStackContext(const DWORD dwTID) -> void {
             ) + str
         );
     }
+
+    CloseHandle(hThread);
 
 }
 
@@ -908,6 +1002,13 @@ auto DebuggerEngine::AnalyseDebugProcessVirtualMemory() -> void {
         std::memset(wchInformation, 0, MAX_PATH);
     }
 
+    /*
+     * Adjust Columns and Rows Sizes
+    */
+    this->m_guiCfg.tblMemoryView->resizeColumnsToContents();
+
+    this->m_guiCfg.tblMemoryView->resizeRowsToContents();
+
 }
 
 auto DebuggerEngine::ListAllHandleObjectsForDebugeeProcess() -> void {
@@ -951,5 +1052,12 @@ auto DebuggerEngine::ListAllHandleObjectsForDebugeeProcess() -> void {
         this->m_debugHandles.push_back(dbgHandle);
 
     }
+
+    /*
+     * Adjust Columns and Rows Sizes
+    */
+    this->m_guiCfg.tblHandles->resizeColumnsToContents();
+
+    this->m_guiCfg.tblHandles->resizeRowsToContents();
 
 }

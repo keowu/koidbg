@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 18/08/2024
+    Last Update: 25/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -43,8 +43,26 @@ public:
     };
 
 
+    enum CurrentDebuggerCommand {
+
+        NO_DECISION,
+        RUNNING,
+        STEP_IN,
+        STEP_OUT,
+        STEP_OVER,
+        RUN
+
+    };
+
+
     DebuggerEngine(std::pair<DWORD, std::string> processInfo, DebuggerEngine::GuiConfig gui);
     DebuggerEngine(std::wstring processPath, DebuggerEngine::GuiConfig gui);
+    ~DebuggerEngine();
+
+    /*
+     *  User Interaction and decisions
+     */
+    CurrentDebuggerCommand m_debugCommand{ DebuggerEngine::CurrentDebuggerCommand::RUNNING };
     auto stopEngine() -> void;
 
 private:
@@ -115,7 +133,8 @@ private:
      * Update all debugger context, when a new event occour, like breakpoints, steps, step into, step over or run.
      */
     auto UpdateAllDebuggerContext(const DWORD dwTID) -> void;
-    auto DeleteAllDebuggerContext(const DWORD dwTID) -> void;
+    auto DeleteAllDebuggerContext() -> void;
+    auto DeleteAllDebuggerContextEngineExit() -> void;
 
     /*
      * Update Disassembler View for the user

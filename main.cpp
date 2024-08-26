@@ -2,7 +2,7 @@
     File: main.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/08/2024
+    Last Update: 25/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -75,6 +75,11 @@ int main(int argc, char *argv[]) {
     if (!EnableDebugPrivilege()) QMessageBox::critical(NULL, "No privilege", "HarukaMirai needs SeDebugPrivilege to run !");
 
     QApplication a(argc, argv);
+
+    //Desativar todos os logs da aplicação.
+    QLoggingCategory::setFilterRules("*.debug=false\n"
+                                     "*.warning=false\n"
+                                     "*.info=false");
 
     MainDebuggerWindow w;
 

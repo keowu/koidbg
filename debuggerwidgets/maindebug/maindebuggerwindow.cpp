@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 14/08/2024
+    Last Update: 25/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -31,7 +31,8 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->btnOpenExecutable, &QAction::triggered, this, &MainDebuggerWindow::onOpenExecutableClicked);
     connect(ui->btnAttachProcessContainer, &QAction::triggered, this, &MainDebuggerWindow::onAttachProcessClicked);
     connect(ui->btnDebugDynamicLibrary, &QAction::triggered, this, &MainDebuggerWindow::onDebugDynamicLibraryClicked);
-    connect(ui->btnStopDebug, &QAction::triggered, this, &MainDebuggerWindow::onStopDebug);
+    connect(ui->btnRun, &QAction::triggered, this, &MainDebuggerWindow::onRunDebug);
+    connect(ui->btnStop, &QAction::triggered, this, &MainDebuggerWindow::onStopDebug);
     connect(ui->btnExit, &QAction::triggered, this, &MainDebuggerWindow::onExitClicked);
 
     /*
@@ -58,9 +59,8 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->tblDisasmVw->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ////////////////////////////////////////////////////////////
-    /// FIX THIS URGENTLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    /// find alternatives or just remove.
-    ui->tblDisasmVw->verticalHeader()->setVisible(false); //-> Identify if this is really crashing the application when loading a new debuggee proccess on engine.
+    /// We need to see if this shit will fuck with the code again
+    ui->tblDisasmVw->verticalHeader()->setVisible(false);
     ////////////////////////////////////////////////////////////
     
 }
@@ -118,9 +118,21 @@ void MainDebuggerWindow::onProcessAttachSelected(const std::pair<int, std::strin
 
 }
 
+void MainDebuggerWindow::onRunDebug() {
+
+    this->m_dbgEngine->m_debugCommand = DebuggerEngine::RUNNING;
+
+}
+
 void MainDebuggerWindow::onStopDebug() {
 
     this->m_dbgEngine->stopEngine();
+
+    this->m_dbgEngine->m_debugCommand = DebuggerEngine::RUNNING;
+
+    this->m_dbgEngine->~DebuggerEngine();
+
+    delete this->m_dbgEngine;
 
 }
 

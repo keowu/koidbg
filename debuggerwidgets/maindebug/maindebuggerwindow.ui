@@ -361,14 +361,18 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
-   <widget class="QMenu" name="menuCommands">
+   <widget class="QMenu" name="menuDebugCommands">
     <property name="title">
-     <string>Commands</string>
+     <string>Debug Commands</string>
     </property>
-    <addaction name="btnStopDebug"/>
+    <addaction name="btnRun"/>
+    <addaction name="actionStep_Inside"/>
+    <addaction name="actionStep_Out"/>
+    <addaction name="actionStep_Over"/>
+    <addaction name="btnStop"/>
    </widget>
    <addaction name="menuHarukaMirai_Debugger"/>
-   <addaction name="menuCommands"/>
+   <addaction name="menuDebugCommands"/>
    <addaction name="menuUtils"/>
    <addaction name="menuAbout"/>
   </widget>
@@ -413,9 +417,29 @@
     <string>About</string>
    </property>
   </action>
-  <action name="btnStopDebug">
+  <action name="btnRun">
    <property name="text">
-    <string>Stop Debug</string>
+    <string>Run</string>
+   </property>
+  </action>
+  <action name="actionStep_Inside">
+   <property name="text">
+    <string>Step Inside</string>
+   </property>
+  </action>
+  <action name="actionStep_Out">
+   <property name="text">
+    <string>Step Out</string>
+   </property>
+  </action>
+  <action name="actionStep_Over">
+   <property name="text">
+    <string>Step Over</string>
+   </property>
+  </action>
+  <action name="btnStop">
+   <property name="text">
+    <string>Stop</string>
    </property>
   </action>
  </widget>

@@ -2,7 +2,7 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 18/08/2024
+    Last Update: 25/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -77,6 +77,12 @@ DebuggerEngine::DebuggerEngine(std::wstring processPath, DebuggerEngine::GuiConf
     );
 }
 
+DebuggerEngine::~DebuggerEngine() {
+
+    this->DeleteAllDebuggerContextEngineExit();
+
+}
+
 auto DebuggerEngine::InitDebuggeeProcess( ) -> std::pair<STARTUPINFOEXW, PROCESS_INFORMATION> {
 
     STARTUPINFOEXW si;
@@ -116,6 +122,7 @@ auto DebuggerEngine::stopEngine() -> void {
 
 }
 
+
 auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
 
     auto thiz = reinterpret_cast<DebuggerEngine*>(args);
@@ -141,7 +148,11 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
             switch (dbgEvent.dwDebugEventCode) {
 
             case EXCEPTION_DEBUG_EVENT:
+
                 thiz->handleExceptionDebugEvent(dbgEvent.dwThreadId, dbgEvent.u.Exception);
+
+                thiz->m_debugCommand = DebuggerEngine::CurrentDebuggerCommand::NO_DECISION;
+
                 break;
             case CREATE_THREAD_DEBUG_EVENT:
                 thiz->handleCreateThreadDebugEvent(dbgEvent.u.CreateThread);
@@ -170,6 +181,8 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
                 break;
             }
 
+            while (thiz->m_debugCommand == DebuggerEngine::CurrentDebuggerCommand::NO_DECISION) {} //Waiting for the user decide what to do
+
             ContinueDebugEvent(dbgEvent.dwProcessId, dbgEvent.dwThreadId, DBG_EXCEPTION_NOT_HANDLED);
         } else {
             DWORD error = GetLastError();
@@ -197,7 +210,7 @@ auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTIO
         qDebug() << "Breakpoint trigged -> " << QString::number(reinterpret_cast<uintptr_t>(info.ExceptionRecord.ExceptionAddress), 16);
 
         //Delete all old context
-        this->DeleteAllDebuggerContext(dwTid);
+        this->DeleteAllDebuggerContext();
 
         //Reupdate new context
         this->UpdateAllDebuggerContext(dwTid);
@@ -284,10 +297,12 @@ auto DebuggerEngine::handleExitProcessDebugEvent(const DWORD dwTid, const EXIT_P
     qDebug() << "EXIT_PROCESS_DEBUG_EVENT";
 
     //Delete all old context
-    this->DeleteAllDebuggerContext(dwTid);
+    this->DeleteAllDebuggerContext();
 
     //Reupdate new context
     this->UpdateAllDebuggerContext(dwTid);
+
+    //Criar uma informação de saída de processo aqui
 
 }
 
@@ -368,9 +383,120 @@ auto DebuggerEngine::UpdateAllDebuggerContext(const DWORD dwTID) -> void {
 
     this->UpdateDisassemblerView(dwTID);
 
+    /*
+     * Força redraw da interface após atualizar dados sem bugar a visualização forçando que o usuário passe o mouse em cima.
+     */
+    this->m_guiCfg.lstCallStack->viewport()->update();
+
+    this->m_guiCfg.lstRegisters->viewport()->update();
+
 }
 
-auto DebuggerEngine::DeleteAllDebuggerContext(const DWORD dwTID) -> void {
+auto DebuggerEngine::DeleteAllDebuggerContextEngineExit() -> void {
+
+    this->DeleteAllDebuggerContext();
+
+    //__________________________________________________________________________________________________________
+    // Clean debug engine information vectors
+    //__________________________________________________________________________________________________________
+    this->m_debugThreads.clear();
+    this->m_debugModules.clear();
+    this->m_debugUnloadedModules.clear();
+    this->m_debugBreakpoint.clear();
+    this->m_debugHandles.clear();
+    this->m_debugMemory.clear();
+
+    //__________________________________________________________________________________________________________
+    // Deleting old Disassembler View
+    //__________________________________________________________________________________________________________
+    QStandardItemModel *disasmModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.tblDisasmVw->model());
+
+    if (disasmModel) disasmModel->clear();
+    else {
+
+        disasmModel = new QStandardItemModel();
+        this->m_guiCfg.tblDisasmVw->setModel(disasmModel);
+
+    }
+
+    //__________________________________________________________________________________________________________
+    // Deleting old Call Stack View
+    //__________________________________________________________________________________________________________
+    QStandardItemModel *callstackModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstCallStack->model());
+
+    if (callstackModel) callstackModel->clear();
+    else {
+
+        callstackModel = new QStandardItemModel();
+        this->m_guiCfg.lstCallStack->setModel(callstackModel);
+
+    }
+
+    //__________________________________________________________________________________________________________
+    // Deleting old Memory View
+    //__________________________________________________________________________________________________________
+    QStandardItemModel *memoryviewModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.tblMemoryView->model());
+
+    if (memoryviewModel) memoryviewModel->clear();
+    else {
+
+        memoryviewModel = new QStandardItemModel();
+        this->m_guiCfg.tblMemoryView->setModel(memoryviewModel);
+
+    }
+
+    //__________________________________________________________________________________________________________
+    // Deleting Modules View (Loaded and Unloaded)
+    //__________________________________________________________________________________________________________
+    QStandardItemModel *modulesLoadedModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstModules->model());
+
+    if (modulesLoadedModel) modulesLoadedModel->clear();
+    else {
+
+        modulesLoadedModel = new QStandardItemModel();
+        this->m_guiCfg.lstModules->setModel(modulesLoadedModel);
+
+    }
+
+    QStandardItemModel *modulesUnloadModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstUnloadedModules->model());
+
+    if (modulesUnloadModel) modulesUnloadModel->clear();
+    else {
+
+        modulesUnloadModel = new QStandardItemModel();
+        this->m_guiCfg.lstUnloadedModules->setModel(modulesUnloadModel);
+
+    }
+
+    //__________________________________________________________________________________________________________
+    // Deleting Threads View
+    //__________________________________________________________________________________________________________
+    QStandardItemModel *threadsViewModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstThreads->model());
+
+    if (threadsViewModel) threadsViewModel->clear();
+    else {
+
+        threadsViewModel = new QStandardItemModel();
+        this->m_guiCfg.lstThreads->setModel(threadsViewModel);
+
+    }
+
+    //__________________________________________________________________________________________________________
+    // Deleting Handles View
+    //__________________________________________________________________________________________________________
+    QStandardItemModel *handlesViewModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.tblHandles->model());
+
+    if (handlesViewModel) handlesViewModel->clear();
+    else {
+
+        handlesViewModel = new QStandardItemModel();
+        this->m_guiCfg.tblHandles->setModel(handlesViewModel);
+
+    }
+
+}
+
+auto DebuggerEngine::DeleteAllDebuggerContext() -> void {
 
     //TODO DELETE ALL THE OLD CONTEXT AND MODELS OF GRIDS, VECTORS ETC FOR MEMORY, HANDLES, STACK, REGISTERS ETC.
 
@@ -436,45 +562,96 @@ auto DebuggerEngine::UpdateDisassemblerView(const DWORD dwTID) -> void {
         }
     }
 
+
+    auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, dwTID);
+
+    size_t ripTblIndex = 0;
+
+    uintptr_t regIP = 0;
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        ARM64_NT_CONTEXT ctx;
+
+        ZeroMemory(&ctx, sizeof(ARM64_NT_CONTEXT));
+        ctx.ContextFlags = CONTEXT_ALL;
+
+        GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&ctx));
+
+        regIP = ctx.Pc - 4; //Let's begin from 4 bytes to previous instruction
+
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+
+        CONTEXT ctx;
+
+        ZeroMemory(&ctx, sizeof(CONTEXT));
+        ctx.ContextFlags = CONTEXT_ALL;
+
+        GetThreadContext(hThread, &ctx);
+
+        regIP = ctx.Rip;
+
+    #endif
+
+    MEMORY_BASIC_INFORMATION mb;
+
+    //Se não conseguirmos fazer uma query da região retornamos e não fazemos nada. o ideal é avisar ao usuário no futuro.
+    if (!VirtualQueryEx(this->hInternalDebugHandle, reinterpret_cast<PVOID>(regIP), &mb, sizeof(mb))) return;
+
+
+    DisasmEngineConfig engCfg{
+
+        model,
+        this->hInternalDebugHandle,
+        this->m_guiCfg.tblDisasmVw,
+        regIP,
+        &ripTblIndex
+
+    };
+
+    auto ucOpcodes = new unsigned char [mb.RegionSize] { 0 };
+
+    DisassemblerEngine *disasm = new DisassemblerEngine();
+
+    //Separar coisas relacionadas a memory em namespaces separadas
+
     model->clear();
 
     model->setHorizontalHeaderLabels(QStringList() << "Address" << "Opcode" << "Disasm" << "Anotations");
 
-    //Definindo lógica:
-    //Disassemblar toda a seção do endereço de RIP/IP
-    //Disassemblar apenas alguns trechos
-    //Disassemblar conforme identifica o tamanho de funções
-    CONTEXT ctx;
+    #if defined(__aarch64__) || defined(_M_ARM64)
 
-    ZeroMemory(&ctx, sizeof(CONTEXT));
-    ctx.ContextFlags = CONTEXT_ALL;
+        /*
+         *   O WINDBG Apenas considera o RIP para disassemblar.
+        */
+        this->ReadMemory(regIP, ucOpcodes, mb.RegionSize);
 
-    auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, dwTID);
+        disasm->RunCapstoneEngineAarch64(regIP, ucOpcodes, mb.RegionSize, engCfg);
 
-    GetThreadContext(hThread, &ctx);
+    #elif defined(__x86_64__) || defined(_M_X64)
+        /*
+         *   O WINDBG Considera toda a região e a partir do início damesma para disassemblar
+         */
+        this->ReadMemory(reinterpret_cast<uintptr_t>(mb.BaseAddress), ucOpcodes, mb.RegionSize);
 
-    DisassemblerEngine *disasm = new DisassemblerEngine();
+        disasm->RunCapstoneEnginex86(reinterpret_cast<uintptr_t>(mb.BaseAddress), ucOpcodes, mb.RegionSize, engCfg);
 
-    size_t szOpcodes = 2048;
-    auto ucOpcodes = new unsigned char[2048]{ 0 }; //Sem zerar bytes
+    #else
+        qDebug() << "Your Harukamirai does not have this processor support! Contact support.";
+    #endif
 
-    //Separar coisas relacionadas a memory em namespaces separadas
-    this->ReadMemory(ctx.Rip, ucOpcodes, szOpcodes);
 
-    DisasmEngineConfig dbgCfg{
+    if (disasm) delete disasm;
 
-        model,
-        this->hInternalDebugHandle,
-        this->m_guiCfg.tblDisasmVw
-
-    };
-
-    disasm->RunCapstoneEnginex86(ctx.Rip, ucOpcodes, szOpcodes, dbgCfg);
-
-    delete disasm;
-    delete []ucOpcodes;
+    if (ucOpcodes) delete []ucOpcodes;
 
     CloseHandle(hThread);
+
+    //Adjusting the Table Cursor by the RIP Index
+    QModelIndex index = model->index(static_cast<int>(ripTblIndex), 3);
+
+    if (index.isValid()) engCfg.tblDisasm->scrollTo(index, QAbstractItemView::PositionAtCenter);
 
     /*
      * Adjust Columns and Rows Sizes
@@ -482,6 +659,8 @@ auto DebuggerEngine::UpdateDisassemblerView(const DWORD dwTID) -> void {
     this->m_guiCfg.tblDisasmVw->resizeColumnsToContents();
 
     this->m_guiCfg.tblDisasmVw->resizeRowsToContents();
+
+    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(3, 100); //Info Column Display
 
     this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(2, 360); //Disasm Column Display
 

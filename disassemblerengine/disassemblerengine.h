@@ -2,7 +2,7 @@
     File: DisassemblerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 18/08/2024
+    Last Update: 25/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -22,9 +22,10 @@
 #include <QStandardItemModel>
 #include <QStyledItemDelegate>
 #include <QStandardItem>
-#include <QTextDocument>  // Include this for QTextDocument
+#include <QTextDocument>
 #include <QPainter>
-#include <QHeaderView>  // Include this header for header view manipulation
+#include <QHeaderView>
+#include <QtConcurrent/QtConcurrent>
 
 //Organize this!!!
 class HtmlDelegate : public QStyledItemDelegate {
@@ -36,16 +37,21 @@ public:
         QString htmlText = index.data(Qt::DisplayRole).toString();
 
         QTextDocument doc;
-
         doc.setHtml(htmlText);
 
         doc.setTextWidth(option.rect.width());
 
-        doc.adjustSize();
+        QSize docSize = doc.size().toSize();
+
+        if (docSize.height() > option.rect.height())
+
+            docSize.setHeight(option.rect.height());
 
         painter->save();
 
         painter->setClipRect(option.rect);
+
+        //painter->fillRect(option.rect, option.palette.window());
 
         painter->translate(option.rect.topLeft());
 
@@ -69,6 +75,8 @@ struct DisasmEngineConfig {
     QStandardItemModel* model;
     HANDLE hProc;
     QTableView* tblDisasm;
+    uintptr_t actualIP;
+    size_t* tblIPidx;
 
 };
 
@@ -775,9 +783,9 @@ private:
 
 public:
 
-    auto TestCapstoneEngine() -> void;
+    auto RunCapstoneEngineAarch64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes, DisasmEngineConfig engCfg) -> void;
     auto RunCapstoneEnginex86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes, DisasmEngineConfig engCfg) -> void;
-    auto TestCapstoneEngineAarch64Test(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> void;
+
 };
 
 #endif // DISASSEMBLERENGINE_H

@@ -2,7 +2,7 @@
     File: DisassemblerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 25/08/2024
+    Last Update: 01/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -12,54 +12,10 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <QTableView>
 #include <QStandardItemModel>
 #include <capstone/platform.h>
 #include <capstone/capstone.h>
-
-//tests
-#include <QApplication>
-#include <QTableView>
-#include <QStandardItemModel>
-#include <QStyledItemDelegate>
-#include <QStandardItem>
-#include <QTextDocument>
-#include <QPainter>
-#include <QHeaderView>
-#include <QtConcurrent/QtConcurrent>
-
-//Organize this!!!
-class HtmlDelegate : public QStyledItemDelegate {
-public:
-    HtmlDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
-
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
-
-        QString htmlText = index.data(Qt::DisplayRole).toString();
-
-        QTextDocument doc;
-        doc.setHtml(htmlText);
-
-        doc.setTextWidth(option.rect.width());
-
-        QSize docSize = doc.size().toSize();
-
-        if (docSize.height() > option.rect.height())
-
-            docSize.setHeight(option.rect.height());
-
-        painter->save();
-
-        painter->setClipRect(option.rect);
-
-        //painter->fillRect(option.rect, option.palette.window());
-
-        painter->translate(option.rect.topLeft());
-
-        doc.drawContents(painter);
-
-        painter->restore();
-    }
-};
 
 struct platform {
 

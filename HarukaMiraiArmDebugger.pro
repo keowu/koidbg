@@ -12,6 +12,8 @@ SOURCES += \
     debuggerengine/debugthread.cpp \
     debuggerwidgets/attachprocess/attachprocesswindow.cpp \
     debuggerengine/debuggerengine.cpp \
+    debuggerwidgets/custom/disasmview/harukadisasmview.cpp \
+    debuggerwidgets/custom/qhexview/QHexView.cpp \
     disassemblerengine/disassemblerengine.cpp \
     main.cpp \
     debuggerwidgets/maindebug/maindebuggerwindow.cpp \
@@ -25,6 +27,9 @@ HEADERS += \
     debuggerengine/debugmodule.h \
     debuggerengine/debugthread.h \
     debuggerwidgets/attachprocess/attachprocesswindow.h \
+    debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.h \
+    debuggerwidgets/custom/disasmview/harukadisasmview.h \
+    debuggerwidgets/custom/qhexview/QHexView.hpp \
     disassemblerengine/disassemblerengine.h \
     disassemblerengine/disassemblerutils.h \
     debuggerwidgets/maindebug/maindebuggerwindow.h \

@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 25/08/2024
+    Last Update: 01/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -22,6 +22,8 @@
 #include <QHeaderView>
 #include <QStandardItemModel>
 #include <QtConcurrent/QtConcurrent>
+#include "debuggerwidgets/custom/disasmview/harukadisasmview.h"
+#include "debuggerwidgets/custom/qhexview/QHexView.hpp"
 
 class DebuggerEngine {
 
@@ -38,7 +40,9 @@ public:
         QListView* lstCallStack;
         QTableView* tblMemoryView;
         QTableView* tblHandles;
-        QTableView* tblDisasmVw;
+        QTableView* tblInterrupts;
+        HarukaDisasmView* tblDisasmVw;
+        QHexView* qHexVw[3];
 
     };
 
@@ -62,7 +66,9 @@ public:
     /*
      *  User Interaction and decisions
      */
-    CurrentDebuggerCommand m_debugCommand{ DebuggerEngine::CurrentDebuggerCommand::RUNNING };
+    //This is volatile, the value not be in the fucking cache, and not be shited by the MSVC optimization.
+    volatile CurrentDebuggerCommand m_debugCommand{ DebuggerEngine::CurrentDebuggerCommand::RUNNING };
+
     auto stopEngine() -> void;
 
 private:
@@ -82,7 +88,8 @@ private:
     std::vector<DebugThread> m_debugThreads;
     std::vector<DebugModule> m_debugModules;
     std::vector<DebugModule> m_debugUnloadedModules;
-    std::vector<DebugBreakpoint> m_debugBreakpoint;
+    std::vector<DebugBreakpoint*> m_debugBreakpoint;
+    int m_hardwareDebugControl = 0;
     std::vector<DebugHandle> m_debugHandles;
     std::vector<DebugMemory> m_debugMemory;
 
@@ -140,6 +147,11 @@ private:
      * Update Disassembler View for the user
      */
     auto UpdateDisassemblerView(const DWORD dwTID) -> void;
+
+    /*
+     *  Breakpoint/Interrupting manager
+     */
+    auto SetInterrupting(uintptr_t uipAddressBreak, bool isHardware) -> void;
 
 };
 

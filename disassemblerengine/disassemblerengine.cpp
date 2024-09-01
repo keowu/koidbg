@@ -2,7 +2,7 @@
     File: DisassemblerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 25/08/2024
+    Last Update: 01/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -110,9 +110,6 @@ auto DisassemblerEngine::RunCapstoneEngineAarch64(uintptr_t uipVirtualAddress, u
 
     cs_close(&handle);
 
-    HtmlDelegate *delegate = new HtmlDelegate(engCfg.tblDisasm);
-    engCfg.tblDisasm->setItemDelegate(delegate);
-
 }
 
 auto DisassemblerEngine::RunCapstoneEnginex86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes, DisasmEngineConfig engCfg) -> void {
@@ -213,9 +210,6 @@ auto DisassemblerEngine::RunCapstoneEnginex86(uintptr_t uipVirtualAddress, unsig
         }*/
 
         cs_close(&handle);
-
-        HtmlDelegate *delegate = new HtmlDelegate(engCfg.tblDisasm);
-        engCfg.tblDisasm->setItemDelegate(delegate);
 
     }
 

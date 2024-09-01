@@ -2,13 +2,14 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 25/08/2024
+    Last Update: 01/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
 #include "maindebuggerwindow.h"
 #include "./ui_maindebuggerwindow.h"
 #include "debuggerwidgets/attachprocess/attachprocesswindow.h"
+#include "debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.h"
 #include <windows.h>
 #include <QDebug>
 #include <QFileDialog>
@@ -17,6 +18,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainDebuggerWindow)
 {
+
     ui->setupUi(this);
 
     /*
@@ -46,7 +48,8 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->lstCallStack->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->tblMemoryView->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->tblHandles->setEditTriggers( QAbstractItemView::NoEditTriggers );
-     ui->tblDisasmVw->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->tblDisasmVw->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->tblInterrupts->setEditTriggers( QAbstractItemView::NoEditTriggers );
 
     /*
      * Memory View/Handles Selection policy, and Vertical Header configuration
@@ -57,12 +60,20 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->tblHandles->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tblDisasmVw->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->tblDisasmVw->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tblInterrupts->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->tblInterrupts->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ////////////////////////////////////////////////////////////
     /// We need to see if this shit will fuck with the code again
     ui->tblDisasmVw->verticalHeader()->setVisible(false);
     ////////////////////////////////////////////////////////////
-    
+
+    /*
+     * Enabling Haruka Mirai Disassembler View HTML Delegate
+     */
+    HarukaDisasmHtmlDelegate *delegate = new HarukaDisasmHtmlDelegate(ui->tblDisasmVw);
+    ui->tblDisasmVw->setItemDelegate(delegate);
+
 }
 
 void MainDebuggerWindow::onOpenExecutableClicked() {
@@ -78,7 +89,8 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
 
     DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
                                       ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
-                                     ui->tblHandles, ui->tblDisasmVw
+                                      ui->tblHandles, ui->tblInterrupts, ui->tblDisasmVw,
+                                     { ui->memoryInspectorOne, ui->memoryInspectorTwo, ui->memoryInspectorThree }
     };
 
     this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
@@ -86,6 +98,10 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
 }
 
 void MainDebuggerWindow::onAttachProcessClicked() {
+
+    //test--------------------------------MOVE POINTER OFFSET ON HEXVIEW....
+    //ui->memoryInspectorOne->ScrollToByFileOffset(0x3DF0);
+    //TEST-------------------------------------------------------
 
     auto attach = new AttachProcessWindow();
 

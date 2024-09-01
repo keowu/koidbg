@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>952</width>
-    <height>699</height>
+    <height>730</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
       <x>0</x>
       <y>0</y>
       <width>951</width>
-      <height>651</height>
+      <height>681</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -72,7 +72,7 @@
         <x>690</x>
         <y>420</y>
         <width>251</width>
-        <height>191</height>
+        <height>221</height>
        </rect>
       </property>
      </widget>
@@ -81,30 +81,117 @@
        <rect>
         <x>0</x>
         <y>450</y>
-        <width>681</width>
-        <height>171</height>
+        <width>691</width>
+        <height>201</height>
        </rect>
       </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
+      <widget class="QWidget" name="tab_15">
+       <attribute name="title">
+        <string>Command Console</string>
+       </attribute>
+       <widget class="QTextEdit" name="textEdit">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>641</width>
+          <height>111</height>
+         </rect>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>130</y>
+          <width>491</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="placeholderText">
+         <string>Enter with the command: !hk</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton">
+        <property name="geometry">
+         <rect>
+          <x>510</x>
+          <y>130</y>
+          <width>71</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Send</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_2">
+        <property name="geometry">
+         <rect>
+          <x>590</x>
+          <y>130</y>
+          <width>61</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Help</string>
+        </property>
+       </widget>
+      </widget>
       <widget class="QWidget" name="tab_9">
        <attribute name="title">
         <string>Memory Inspector 1</string>
        </attribute>
+       <widget class="QHexView" name="memoryInspectorOne">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>681</width>
+          <height>161</height>
+         </rect>
+        </property>
+       </widget>
       </widget>
       <widget class="QWidget" name="tab_10">
        <attribute name="title">
         <string>Memory Inspector 2</string>
        </attribute>
+       <widget class="QHexView" name="memoryInspectorTwo">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>681</width>
+          <height>161</height>
+         </rect>
+        </property>
+       </widget>
       </widget>
       <widget class="QWidget" name="tab_11">
        <attribute name="title">
         <string>Memory Inspector 3</string>
        </attribute>
+       <widget class="QHexView" name="memoryInspectorThree">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>681</width>
+          <height>161</height>
+         </rect>
+        </property>
+       </widget>
       </widget>
      </widget>
-     <widget class="QTableView" name="tblDisasmVw">
+     <widget class="HarukaDisasmView" name="tblDisasmVw">
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -119,6 +206,19 @@
      <attribute name="title">
       <string>Debugger Automation</string>
      </attribute>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>220</x>
+        <y>90</y>
+        <width>691</width>
+        <height>321</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>It's LUA time, please connect your VSCODE to Start Automating HarukaMirai</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_7">
      <attribute name="title">
@@ -443,6 +543,18 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>HarukaDisasmView</class>
+   <extends>QTableView</extends>
+   <header>debuggerwidgets\custom\disasmview\harukadisasmview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QHexView</class>
+   <extends>QListWidget</extends>
+   <header>debuggerwidgets\custom\qhexview\QHexView.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

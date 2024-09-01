@@ -2,7 +2,7 @@
     File: DebugBreakpoints.h
     Author: João Vitor(@Keowu)
     Created: 11/08/2024
-    Last Update: 11/08/2024
+    Last Update: 01/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -14,7 +14,7 @@
 enum InterruptType {
 
     BREAK_HW,
-    BREAK_INT3
+    BREAK_INT
 
 };
 

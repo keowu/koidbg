@@ -1,3 +1,11 @@
+/*
+    File: harukadisasmview.h
+    Author: João Vitor(@Keowu)
+    Created: 24/08/2024
+    Last Update: 08/09/2024
+
+    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+*/
 #include "debuggerwidgets/custom/disasmview/harukadisasmview.h"
 #include <QAction>
 #include <QDebug>
@@ -7,7 +15,7 @@ HarukaDisasmView::HarukaDisasmView(QWidget *parent)
 
 }
 
-auto HarukaDisasmView::configureDisasm(QHexView* qHexVw[3], HANDLE hProcessInternal, BreakPointCallback setBreakPointCallback) -> void {
+auto HarukaDisasmView::configureDisasm(QHexView* qHexVw[3], HANDLE hProcessInternal, BreakPointCallback setBreakPointCallback, SetIPCallback setIPCallback) -> void {
 
     for (int i = 0; i < 3; ++i) {
 
@@ -18,6 +26,8 @@ auto HarukaDisasmView::configureDisasm(QHexView* qHexVw[3], HANDLE hProcessInter
     this->m_hProcessInternal = hProcessInternal;
 
     this->m_setBreakPointCallback = setBreakPointCallback;
+
+    this->m_setIPCallback = setIPCallback;
 
 }
 
@@ -30,6 +40,7 @@ void HarukaDisasmView::contextMenuEvent(QContextMenuEvent *event) {
     QAction *actionMemoryInspector1 = contextMenu.addAction("Follow in Memory Inspector 1");
     QAction *actionMemoryInspector2 = contextMenu.addAction("Follow in Memory Inspector 2");
     QAction *actionMemoryInspector3 = contextMenu.addAction("Follow in Memory Inspector 3");
+    QAction *actionSetIp = contextMenu.addAction("Set IP to this location");
     QAction *actionDecompile = contextMenu.addAction("Decompile to Pseudo-C");
 
     connect(actionSftInterrupt, &QAction::triggered, this, &HarukaDisasmView::onSoftwareInterrupt);
@@ -37,6 +48,7 @@ void HarukaDisasmView::contextMenuEvent(QContextMenuEvent *event) {
     connect(actionMemoryInspector1, &QAction::triggered, this, &HarukaDisasmView::onMemoryInspector1);
     connect(actionMemoryInspector2, &QAction::triggered, this, &HarukaDisasmView::onMemoryInspector2);
     connect(actionMemoryInspector3, &QAction::triggered, this, &HarukaDisasmView::onMemoryInspector3);
+    connect(actionSetIp, &QAction::triggered, this, &HarukaDisasmView::onActionSetIp);
     connect(actionDecompile, &QAction::triggered, this, &HarukaDisasmView::onDecompileToPseudoC);
 
     contextMenu.exec(event->globalPos());
@@ -165,6 +177,29 @@ auto HarukaDisasmView::updateMemoryInspector(QHexView* memoryInspector, QString 
         delete[] buffer;
 
     } else qDebug() << "Failed to convert address string to numeric value.";
+
+}
+
+void HarukaDisasmView::onActionSetIp() {
+
+    QModelIndex index = currentIndex();
+
+    if (index.isValid()) {
+
+        int row = index.row();
+
+        QModelIndex column0Index = index.model()->index(row, 0);
+
+        QString addressString = column0Index.data().toString();
+
+        addressString.remove("0x");
+
+        bool bConverted;
+        uintptr_t address = addressString.toULongLong(&bConverted, 16);
+
+        if (bConverted) this->m_setIPCallback(address);
+
+    }
 
 }
 

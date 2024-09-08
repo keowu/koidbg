@@ -2,7 +2,7 @@
     File: DisassemblerUtils.h
     Author: João Vitor(@Keowu)
     Created: 17/08/2024
-    Last Update: 25/08/2024
+    Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -49,6 +49,17 @@ namespace DisassemblerUtils {
             return insn.detail->x86.operands[0].imm;
         }
 
+        auto is_returning(const cs_insn& insn) -> bool {
+
+            static const QSet<QString> retinst = {
+
+                "ret", "retn", "retf", "retfn"
+
+            };
+
+            return retinst.contains(QString(insn.mnemonic));
+        }
+
     }
 
     namespace AARCH64 {
@@ -79,6 +90,17 @@ namespace DisassemblerUtils {
             };
 
             return syscallInterrupting.contains(QString(insn.mnemonic));
+        }
+
+        auto is_returning(const cs_insn& insn) -> bool {
+
+            static const QSet<QString> retinst = {
+
+                "ret"
+
+            };
+
+            return retinst.contains(QString(insn.mnemonic));
         }
 
     }

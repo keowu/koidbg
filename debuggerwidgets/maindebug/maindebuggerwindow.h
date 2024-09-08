@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 25/08/2024
+    Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -11,6 +11,7 @@
 
 #include <QMainWindow>
 #include <QHeaderView>
+#include <QMessageBox>
 #include "debuggerengine/DebuggerEngine.h"
 
 QT_BEGIN_NAMESPACE
@@ -36,8 +37,13 @@ private slots:
     void onAttachProcessClicked();
     void onDebugDynamicLibraryClicked();
     void onRunDebug();
+    void onStepOut();
+    void onStepOver();
+    void onStepIn();
     void onStopDebug();
+    void onAbout();
     void onExitClicked();
+    auto OnInterruptListRowClicked(const QModelIndex &index) -> void;
 
 private:
     Ui::MainDebuggerWindow *ui;

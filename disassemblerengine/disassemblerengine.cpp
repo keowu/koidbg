@@ -2,7 +2,7 @@
     File: DisassemblerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 01/09/2024
+    Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -213,4 +213,88 @@ auto DisassemblerEngine::RunCapstoneEnginex86(uintptr_t uipVirtualAddress, unsig
 
     }
 
+}
+
+auto DisassemblerEngine::RunCapstoneForStepOutARM64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t {
+
+    csh handle;
+
+    struct platform platforms[] = {
+        {
+            CS_ARCH_ARM64,
+            CS_MODE_ARM,
+            (unsigned char *)ucOpcodes,
+            szOpcodes,
+            "ARM-64"
+        },
+    };
+
+    cs_insn *insn;
+
+    int i;
+    size_t count;
+
+    for (i = 0; i < sizeof(platforms)/sizeof(platforms[0]); i++) {
+
+        cs_err err = cs_open(platforms[i].arch, platforms[i].mode, &handle);
+
+        if (err) return 0;
+
+        cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+
+        count = cs_disasm(handle, platforms[i].code, platforms[i].size, uipVirtualAddress, 0, &insn);
+
+
+        if (count)
+
+            for (size_t j = 0; j < count; ++j)
+
+                if (DisassemblerUtils::AARCH64::is_returning(insn[j])) return insn[j].address;
+
+        cs_close(&handle);
+    }
+
+    return 0;
+}
+
+auto DisassemblerEngine::RunCapstoneForStepOutx86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t {
+
+    csh handle;
+
+    struct platform platforms[] = {
+        {
+            CS_ARCH_X86,
+            CS_MODE_64,
+            ucOpcodes,
+            szOpcodes,
+            "x86-64"
+        },
+    };
+
+    cs_insn *insn;
+
+    int i;
+    size_t count;
+
+    for (i = 0; i < sizeof(platforms)/sizeof(platforms[0]); i++) {
+
+        cs_err err = cs_open(platforms[i].arch, platforms[i].mode, &handle);
+
+        if (err) return 0;
+
+        cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+
+        count = cs_disasm(handle, platforms[i].code, platforms[i].size, uipVirtualAddress, 0, &insn);
+
+        if (count)
+
+            for (size_t j = 0; j < count; ++j)
+
+                if (DisassemblerUtils::x86_64::is_returning(insn[j])) return insn[j].address;
+
+        cs_close(&handle);
+
+    }
+
+    return 0;
 }

@@ -72,7 +72,7 @@
         <x>690</x>
         <y>420</y>
         <width>251</width>
-        <height>221</height>
+        <height>231</height>
        </rect>
       </property>
      </widget>
@@ -459,16 +459,16 @@
     <property name="title">
      <string>Help</string>
     </property>
-    <addaction name="actionAbout"/>
+    <addaction name="btnAbout"/>
    </widget>
    <widget class="QMenu" name="menuDebugCommands">
     <property name="title">
      <string>Debug Commands</string>
     </property>
     <addaction name="btnRun"/>
-    <addaction name="actionStep_Inside"/>
-    <addaction name="actionStep_Out"/>
-    <addaction name="actionStep_Over"/>
+    <addaction name="btnStepIn"/>
+    <addaction name="btnStepOut"/>
+    <addaction name="btnStepOver"/>
     <addaction name="btnStop"/>
    </widget>
    <addaction name="menuHarukaMirai_Debugger"/>
@@ -512,7 +512,7 @@
     <string>Import Patchs</string>
    </property>
   </action>
-  <action name="actionAbout">
+  <action name="btnAbout">
    <property name="text">
     <string>About</string>
    </property>
@@ -522,17 +522,17 @@
     <string>Run</string>
    </property>
   </action>
-  <action name="actionStep_Inside">
+  <action name="btnStepIn">
    <property name="text">
     <string>Step Inside</string>
    </property>
   </action>
-  <action name="actionStep_Out">
+  <action name="btnStepOut">
    <property name="text">
     <string>Step Out</string>
    </property>
   </action>
-  <action name="actionStep_Over">
+  <action name="btnStepOver">
    <property name="text">
     <string>Step Over</string>
    </property>

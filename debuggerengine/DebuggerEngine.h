@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 01/09/2024
+    Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -58,6 +58,13 @@ public:
 
     };
 
+    enum CurrentDebuggerRule {
+
+        NO_RULE,
+        BKPT_CONTINUE
+
+    };
+
 
     DebuggerEngine(std::pair<DWORD, std::string> processInfo, DebuggerEngine::GuiConfig gui);
     DebuggerEngine(std::wstring processPath, DebuggerEngine::GuiConfig gui);
@@ -68,8 +75,50 @@ public:
      */
     //This is volatile, the value not be in the fucking cache, and not be shited by the MSVC optimization.
     volatile CurrentDebuggerCommand m_debugCommand{ DebuggerEngine::CurrentDebuggerCommand::RUNNING };
+    volatile CurrentDebuggerRule m_debugRule{ DebuggerEngine::CurrentDebuggerRule::NO_RULE };
 
+    /*
+     * Stoping engine
+     */
     auto stopEngine() -> void;
+
+    /*
+     * Execute a stepOver
+     */
+    auto stepOver() -> void;
+
+    /*
+     * Execute a stepOut
+     */
+    auto stepOut() -> void;
+
+    /*
+     * External getters and setters utils
+     */
+    auto getBreakpointByIndex(int index) -> DebugBreakpoint* {
+
+        return this->m_debugBreakpoint.at(index);
+    }
+
+    auto removeBreakpointItemByIndex(int index) -> void {
+
+        if (index < this->m_debugBreakpoint.size()) {
+
+            this->m_debugBreakpoint.erase(this->m_debugBreakpoint.begin() + index);
+
+        } else {
+
+            qDebug() << "removeBreakpointItemByIndex -> Index out of range.";
+
+        }
+
+    }
+
+    /*
+     *  Breakpoint/Interrupting manager
+     */
+    auto SetInterrupting(uintptr_t uipAddressBreak, bool isHardware) -> void;
+    auto RemoveInterrupting(DebugBreakpoint* debug) -> void;
 
 private:
     /*
@@ -147,12 +196,20 @@ private:
      * Update Disassembler View for the user
      */
     auto UpdateDisassemblerView(const DWORD dwTID) -> void;
-
-    /*
-     *  Breakpoint/Interrupting manager
-     */
-    auto SetInterrupting(uintptr_t uipAddressBreak, bool isHardware) -> void;
+    auto UpdateActualIPContext(uintptr_t uipAddressToIP) -> void;
 
 };
+
+/*
+ * --------------------------------------------------------------------------------------------------------------------------------------------------------------
+ * ARM64 - BVR\BCR FLAGS for HW Breakpoints
+ * Thanks to: ARM64 BREAKPOINT, THANKS TO: https://github.com/ninjaprawn/async_wake-fun/blob/6ffb822e153fd98fc6f9d09604317f316c3b0577/async_wake_ios/kdbg.c#L686
+ *--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+#define BCR_BAS_ALL (0xf << 5)
+#define BCR_E (1 << 0)
+/*
+* --------------------------------------------------------------------------------------------------------------------------------------------------------------
+*/
 
 #endif // DEBUGGERENGINE_H

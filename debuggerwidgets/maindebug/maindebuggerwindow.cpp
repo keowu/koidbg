@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 01/09/2024
+    Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -34,7 +34,11 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->btnAttachProcessContainer, &QAction::triggered, this, &MainDebuggerWindow::onAttachProcessClicked);
     connect(ui->btnDebugDynamicLibrary, &QAction::triggered, this, &MainDebuggerWindow::onDebugDynamicLibraryClicked);
     connect(ui->btnRun, &QAction::triggered, this, &MainDebuggerWindow::onRunDebug);
+    connect(ui->btnStepOver, &QAction::triggered, this, &MainDebuggerWindow::onStepOver);
+    connect(ui->btnStepIn, &QAction::triggered, this, &MainDebuggerWindow::onStepIn);
+    connect(ui->btnStepOut, &QAction::triggered, this, &MainDebuggerWindow::onStepOut);
     connect(ui->btnStop, &QAction::triggered, this, &MainDebuggerWindow::onStopDebug);
+    connect(ui->btnAbout, &QAction::triggered, this, &MainDebuggerWindow::onAbout);
     connect(ui->btnExit, &QAction::triggered, this, &MainDebuggerWindow::onExitClicked);
 
     /*
@@ -73,6 +77,11 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
      */
     HarukaDisasmHtmlDelegate *delegate = new HarukaDisasmHtmlDelegate(ui->tblDisasmVw);
     ui->tblDisasmVw->setItemDelegate(delegate);
+
+    /*
+     * Binding events for Debugger Widgets
+     */
+    connect(ui->tblInterrupts, &QTableView::clicked, this, &MainDebuggerWindow::OnInterruptListRowClicked);
 
 }
 
@@ -134,9 +143,68 @@ void MainDebuggerWindow::onProcessAttachSelected(const std::pair<int, std::strin
 
 }
 
+auto MainDebuggerWindow::OnInterruptListRowClicked(const QModelIndex &index) -> void {
+
+    qDebug() << "MainDebuggerWindow::OnInterruptListRowClicked";
+
+    if (index.isValid()) {
+
+        int row = index.row();
+
+        auto debug = this->m_dbgEngine->getBreakpointByIndex(row);
+
+        qDebug() << "Row clicked:" << QString::number(debug->m_ptrBreakpointAddress, 16);
+
+        this->m_dbgEngine->RemoveInterrupting(debug);
+
+        //Removing breakpoint from model of Tblinterrupts
+        QStandardItemModel *model = qobject_cast<QStandardItemModel *>(ui->tblInterrupts->model());
+
+        if (model) {
+
+            if (row >= 0 && row < model->rowCount()) {
+
+                model->removeRow(row);
+
+            } else {
+
+                qWarning("Row index is out of range.");
+
+            }
+        } else {
+
+            qWarning("Model is not of type QStandardItemModel.");
+
+        }
+
+        //Removing breakpoint item instance from DebugBreakPoint vector list
+        this->m_dbgEngine->removeBreakpointItemByIndex(row);
+
+    }
+
+}
+
 void MainDebuggerWindow::onRunDebug() {
 
     this->m_dbgEngine->m_debugCommand = DebuggerEngine::RUNNING;
+
+}
+
+void MainDebuggerWindow::onStepOver() {
+
+    this->m_dbgEngine->stepOver();
+
+}
+
+void MainDebuggerWindow::onStepOut() {
+
+    this->m_dbgEngine->stepOut();
+
+}
+
+void MainDebuggerWindow::onStepIn() {
+
+    qDebug() << "MainDebuggerWindow::onStepIn";
 
 }
 
@@ -146,9 +214,24 @@ void MainDebuggerWindow::onStopDebug() {
 
     this->m_dbgEngine->m_debugCommand = DebuggerEngine::RUNNING;
 
+    this->m_dbgEngine->m_debugRule = DebuggerEngine::CurrentDebuggerRule::NO_RULE;
+
     this->m_dbgEngine->~DebuggerEngine();
 
     delete this->m_dbgEngine;
+
+}
+
+void MainDebuggerWindow::onAbout() {
+
+    QMessageBox msgBox;
+
+    msgBox.setWindowTitle("About HarukaMirai DBG");
+    msgBox.setText("(C) Fluxuss Software Security, LLC - HarukaDBG\n\nThis Version is Licensed to: João Vitor(@Keowu)\n\nModules for this license:\n- X86_64\n- ARM64\n\nVersion: 1.51.3");
+    msgBox.setIcon(QMessageBox::Information);
+    msgBox.setStandardButtons(QMessageBox::Ok);
+
+    msgBox.exec();
 
 }
 

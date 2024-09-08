@@ -2,7 +2,7 @@
     File: main.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 01/09/2024
+    Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -77,9 +77,9 @@ int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
     //Desativar todos os logs da aplicação.
-    QLoggingCategory::setFilterRules("*.debug=false\n"
-                                     "*.warning=false\n"
-                                     "*.info=false");
+    //QLoggingCategory::setFilterRules("*.debug=false\n"
+    //                                 "*.warning=false\n"
+    //                                 "*.info=false");
 
     MainDebuggerWindow w;
 

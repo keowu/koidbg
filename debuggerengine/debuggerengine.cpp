@@ -2,7 +2,7 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 01/09/2024
+    Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -140,8 +140,14 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
      * Begin Memory Inspectors
     */
     QHexView* hexViews[3] = { thiz->m_guiCfg.qHexVw[0], thiz->m_guiCfg.qHexVw[1], thiz->m_guiCfg.qHexVw[2] };
-    BreakPointCallback callback = std::bind(&DebuggerEngine::SetInterrupting, thiz, std::placeholders::_1, std::placeholders::_2);
-    thiz->m_guiCfg.tblDisasmVw->configureDisasm(hexViews, thiz->m_processInfo.second.hProcess, callback);
+    BreakPointCallback callbackBreakpoint = std::bind(&DebuggerEngine::SetInterrupting, thiz, std::placeholders::_1, std::placeholders::_2);
+    SetIPCallback callbackIP = std::bind(&DebuggerEngine::UpdateActualIPContext, thiz, std::placeholders::_1);
+    thiz->m_guiCfg.tblDisasmVw->configureDisasm(hexViews, thiz->m_processInfo.second.hProcess, callbackBreakpoint, callbackIP);
+
+
+    /*
+    * Main debugger loop
+    */
     DEBUG_EVENT dbgEvent;
     std::memset(&dbgEvent, 0, sizeof(DEBUG_EVENT));
 
@@ -155,9 +161,9 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
 
             case EXCEPTION_DEBUG_EVENT:
 
-                thiz->handleExceptionDebugEvent(dbgEvent.dwThreadId, dbgEvent.u.Exception);
-
                 thiz->m_debugCommand = DebuggerEngine::CurrentDebuggerCommand::NO_DECISION;
+
+                thiz->handleExceptionDebugEvent(dbgEvent.dwThreadId, dbgEvent.u.Exception);
 
                 break;
             case CREATE_THREAD_DEBUG_EVENT:
@@ -191,6 +197,13 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
 
             while (thiz->m_debugCommand == DebuggerEngine::CurrentDebuggerCommand::NO_DECISION) {} //Waiting for the user decide what to do
 
+            if (thiz->m_debugRule == DebuggerEngine::BKPT_CONTINUE) {
+
+               ContinueDebugEvent(dbgEvent.dwProcessId, dbgEvent.dwThreadId, DBG_CONTINUE);
+
+               thiz->m_debugRule = DebuggerEngine::CurrentDebuggerRule::NO_RULE;
+            }
+
             ContinueDebugEvent(dbgEvent.dwProcessId, dbgEvent.dwThreadId, DBG_EXCEPTION_NOT_HANDLED);
         } else {
             DWORD error = GetLastError();
@@ -211,7 +224,7 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
  */
 auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTION_DEBUG_INFO& info) -> void {
 
-    qDebug() << "EXCEPTION_DEBUG_EVENT";
+    qDebug() << "EXCEPTION_DEBUG_EVENT -> " << QString::number(info.ExceptionRecord.ExceptionCode, 16);
 
     if (info.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT) {
 
@@ -223,9 +236,7 @@ auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTIO
         //Reupdate new context
         this->UpdateAllDebuggerContext(dwTid);
 
-    }
-
-    if (info.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP) {
+    } else if (info.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP) {
 
         qDebug() << "Hardware Breakpoint trigged -> " << QString::number(reinterpret_cast<uintptr_t>(info.ExceptionRecord.ExceptionAddress), 16);
 
@@ -236,6 +247,22 @@ auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTIO
         this->UpdateAllDebuggerContext(dwTid);
 
     }
+
+    //TODO: OTHER/GENERIC EXCEPTIONS
+    /*else {
+
+
+        this->m_debugRule = DebuggerEngine::BKPT_CONTINUE;
+        this->m_debugCommand = DebuggerEngine::RUN;
+
+        //Delete all old context
+        this->DeleteAllDebuggerContext();
+
+        //Reupdate new context
+        this->UpdateAllDebuggerContext(dwTid);
+
+    }*/
+
 
 }
 
@@ -1305,40 +1332,54 @@ auto DebuggerEngine::SetInterrupting(uintptr_t uipAddressBreak, bool isHardware)
     #if defined(__aarch64__) || defined(_M_ARM64)
 
         ////https://aarzilli.github.io/debugger-bibliography/hwbreak.html
-        maxHWBreakByArch = 8;
+        maxHWBreakByArch = ARM64_MAX_BREAKPOINTS;
 
         if (isHardware) {
 
-            qDebug() << "BVR + BCR -> " << QString::number(uipAddressBreak, 16);
+            if (this->m_hardwareDebugControl <= maxHWBreakByArch) {
 
-            HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+                qDebug() << "BVR + BCR -> " << QString::number(uipAddressBreak, 16);
 
-            ARM64_NT_CONTEXT context;
+                HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
 
-            ZeroMemory(&context, sizeof(CONTEXT));
-            context.ContextFlags = CONTEXT_ALL;
+                SuspendThread(hThread);
 
-            qDebug() << "" << GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+                ARM64_NT_CONTEXT context;
 
-            context.Bvr[0] = uipAddressBreak;
-            context.Bcr[0] = 1;
+                ZeroMemory(&context, sizeof(CONTEXT));
+                context.ContextFlags = CONTEXT_ALL;
 
-            qDebug() << "Pc: " << QString::number(context.Pc, 16);
-            qDebug() << "" << SetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+                GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
 
-            CloseHandle(hThread);
+                context.Bvr[this->m_hardwareDebugControl] = uipAddressBreak;
+                context.Bcr[this->m_hardwareDebugControl] = BCR_BAS_ALL | BCR_E; //Breakpoint enable flags
+
+                SetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+                this->m_hardwareDebugControl++;
+
+                ResumeThread(hThread);
+
+                CloseHandle(hThread);
+
+                auto dbgBreakpoint = new DebugBreakpoint(uipAddressBreak, 0x00, -1, InterruptType::BREAK_HW);
+
+                this->m_debugBreakpoint.push_back(dbgBreakpoint);
+
+            } else
+                this->m_guiCfg.statusbar->showMessage("[Important] Maximum HW Interrupts defined for your arch!!! please release some resources to set new ones!", 10000);
 
         }
         else {
             qDebug() << "BRK #0xF000 -> " << QString::number(uipAddressBreak, 16);
 
-            unsigned char ucBrkIntb[4] { 0 };
-            ReadProcessMemory(this->m_processInfo.second.hProcess, reinterpret_cast<PVOID>(uipAddressBreak), ucBrkIntb, sizeof(ucBrkIntb), FALSE);
+            auto ucBrkIntb = new unsigned char[4] { 0 };
+            ReadProcessMemory(this->m_processInfo.second.hProcess, reinterpret_cast<PVOID>(uipAddressBreak), ucBrkIntb, 4, FALSE);
 
             DWORD ucBRKF000 = 0xD43E0000;
             WriteProcessMemory(this->m_processInfo.second.hProcess, reinterpret_cast<PVOID>(uipAddressBreak), &ucBRKF000, sizeof(DWORD), FALSE);
 
-            auto dbgBreakpoint = new DebugBreakpoint(uipAddressBreak, ucBrkIntb, sizeof(ucBrkIntb), InterruptType::BREAK_INT);
+            auto dbgBreakpoint = new DebugBreakpoint(uipAddressBreak, ucBrkIntb, 4, InterruptType::BREAK_INT);
 
             this->m_debugBreakpoint.push_back(dbgBreakpoint);
         }
@@ -1354,6 +1395,8 @@ auto DebuggerEngine::SetInterrupting(uintptr_t uipAddressBreak, bool isHardware)
                 qDebug() << "DR0-DR4, DR7 -> " << QString::number(uipAddressBreak, 16);
 
                 HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+
+                SuspendThread(hThread);
 
                 CONTEXT context;
 
@@ -1381,13 +1424,15 @@ auto DebuggerEngine::SetInterrupting(uintptr_t uipAddressBreak, bool isHardware)
 
                 SetThreadContext(hThread, &context);
 
-                CloseHandle(hThread);
-
-                auto dbgBreakpoint = new DebugBreakpoint(uipAddressBreak, reinterpret_cast<unsigned char*>(-1), -1, InterruptType::BREAK_HW);
+                auto dbgBreakpoint = new DebugBreakpoint(uipAddressBreak, 0x00, -1, InterruptType::BREAK_HW);
 
                 this->m_debugBreakpoint.push_back(dbgBreakpoint);
 
                 this->m_hardwareDebugControl++;
+
+                ResumeThread(hThread);
+
+                CloseHandle(hThread);
 
             } else
                 this->m_guiCfg.statusbar->showMessage("[Important] Maximum HW Interrupts defined for your arch!!! please release some resources to set new ones!", 10000);
@@ -1397,15 +1442,26 @@ auto DebuggerEngine::SetInterrupting(uintptr_t uipAddressBreak, bool isHardware)
 
             qDebug() << "INT3 -> " << QString::number(uipAddressBreak, 16);
 
-            unsigned char ucInt3b[4] { 0 };
-            ReadProcessMemory(this->m_processInfo.second.hProcess, reinterpret_cast<PVOID>(uipAddressBreak), ucInt3b, sizeof(ucInt3b), FALSE);
+            HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+
+            SuspendThread(hThread);
+
+            //unsigned char ucInt3b[4] { 0 };
+            auto ucInt3b = new unsigned char[4]{ 0 };
+            ReadProcessMemory(this->m_processInfo.second.hProcess, reinterpret_cast<PVOID>(uipAddressBreak), ucInt3b, 4, FALSE);
 
             unsigned char ucInt3 { 0xCC };
             WriteProcessMemory(this->m_processInfo.second.hProcess, reinterpret_cast<PVOID>(uipAddressBreak), &ucInt3, 1, FALSE);
 
-            auto dbgBreakpoint = new DebugBreakpoint(uipAddressBreak, ucInt3b, sizeof(ucInt3b), InterruptType::BREAK_INT);
+            FlushInstructionCache(this->m_processInfo.second.hProcess, reinterpret_cast<PVOID>(uipAddressBreak), 1);
+
+            auto dbgBreakpoint = new DebugBreakpoint(uipAddressBreak, ucInt3b, 4, InterruptType::BREAK_INT);
 
             this->m_debugBreakpoint.push_back(dbgBreakpoint);
+
+            ResumeThread(hThread);
+
+            CloseHandle(hThread);
 
         }
 
@@ -1426,5 +1482,289 @@ auto DebuggerEngine::SetInterrupting(uintptr_t uipAddressBreak, bool isHardware)
     this->m_guiCfg.tblInterrupts->resizeColumnsToContents();
 
     this->m_guiCfg.tblInterrupts->resizeRowsToContents();
+
+}
+
+auto DebuggerEngine::UpdateActualIPContext(uintptr_t uipAddressToIP) -> void {
+
+    qDebug() << "DebuggerEngine::UpdateActualIPContext";
+
+    HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+
+    SuspendThread(hThread);
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        ARM64_NT_CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_CONTROL;
+
+        GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+        context.Pc = uipAddressToIP;
+
+        SetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+
+        CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_CONTROL;
+
+        GetThreadContext(hThread, &context);
+
+        context.Rip = uipAddressToIP;
+
+        SetThreadContext(hThread, &context);
+
+    #else
+    #endif
+
+    ResumeThread(hThread);
+
+    CloseHandle(hThread);
+
+    this->DeleteAllDebuggerContext();
+
+    this->UpdateAllDebuggerContext(this->m_processInfo.second.dwThreadId);
+
+    this->m_debugRule = DebuggerEngine::BKPT_CONTINUE;
+
+}
+
+auto DebuggerEngine::stepOver() -> void {
+
+    qDebug() << "DebuggerEngine::stepOver";
+
+    HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+
+    SuspendThread(hThread);
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        ARM64_NT_CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_CONTROL;
+
+        GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+        context.Cpsr |= 0x200000; // Set the T-bit in the Current Program Status Register (CPSR) for single-stepping -> https://stackoverflow.com/a/69487245
+
+        SetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+
+        CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_CONTROL;
+
+        GetThreadContext(hThread, &context);
+
+        context.EFlags |= 0x100; // Set the Trap Flag (TF) in EFlags for single-stepping
+
+        SetThreadContext(hThread, &context);
+
+    #endif
+
+    ResumeThread(hThread);
+
+    CloseHandle(hThread);
+
+    this->m_debugRule = DebuggerEngine::BKPT_CONTINUE;
+
+    this->m_debugCommand = DebuggerEngine::RUNNING;
+
+}
+
+auto DebuggerEngine::stepOut() -> void {
+
+    qDebug() << "DebuggerEngine::stepOut";
+
+    auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+
+    DWORD64 Ip = 0;
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        ARM64_NT_CONTEXT ctx;
+
+        ZeroMemory(&ctx, sizeof(ctx));
+        ctx.ContextFlags = CONTEXT_CONTROL;
+
+        GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&ctx));
+
+        Ip = ctx.Pc;
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+
+        CONTEXT ctx;
+        ctx.ContextFlags = CONTEXT_ALL;
+
+        GetThreadContext(hThread, &ctx);
+
+        Ip = ctx.Rip;
+
+    #endif
+
+    MEMORY_BASIC_INFORMATION mb{ 0 };
+
+    VirtualQueryEx(this->hInternalDebugHandle, reinterpret_cast<PVOID>(Ip), &mb, sizeof(mb));
+
+    auto szBefore = Ip - reinterpret_cast<uintptr_t>(mb.AllocationBase);
+
+    auto szToAnalyze = mb.RegionSize - szBefore;
+
+    if (szToAnalyze <= 0) return; //O resultado para analise é negativo.
+
+    auto ucOpcodes = new unsigned char [szToAnalyze]{ 0 };
+
+    if(!this->ReadMemory(Ip, ucOpcodes, szToAnalyze)) return; //Não foi possível ler a memória.
+
+    DisassemblerEngine* disasm = new DisassemblerEngine();
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+        auto addressToInterrupt = disasm->RunCapstoneForStepOutARM64(Ip, ucOpcodes, szToAnalyze);
+    #elif defined(__x86_64__) || defined(_M_X64)
+        auto addressToInterrupt = disasm->RunCapstoneForStepOutx86(Ip, ucOpcodes, szToAnalyze);
+    #endif
+
+    qDebug() << "[DebuggerEngine::InsideContext::FuckingAnalysisEngine::StepOutAnalyzes] candidate result: " << QString::number(addressToInterrupt, 16);
+
+    if (!addressToInterrupt) this->m_guiCfg.statusbar->showMessage("[Important] We cannot found some candidate for Step Out!", 10000);
+    else this->SetInterrupting(addressToInterrupt, FALSE); //Call to set a new interrupt for software
+
+    delete disasm;
+
+    delete[] ucOpcodes;
+
+    this->m_debugRule = DebuggerEngine::BKPT_CONTINUE;
+
+    this->m_debugCommand = DebuggerEngine::RUNNING;
+}
+
+auto DebuggerEngine::RemoveInterrupting(DebugBreakpoint* debug) -> void {
+
+    if (debug->m_intType == InterruptType::BREAK_HW) {
+
+        qDebug() << "InterruptType::BREAK_HW";
+
+        auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+
+        SuspendThread(hThread);
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        ARM64_NT_CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_ALL;
+
+        GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+        for (auto i = 0; i < ARM64_MAX_BREAKPOINTS; i++) {
+
+            if (context.Bvr[i] == debug->m_ptrBreakpointAddress) {
+
+                context.Bvr[i] = 0;
+                context.Bcr[i] = 0;
+
+                break;
+            }
+
+        }
+
+        SetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+
+        CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_ALL;
+        GetThreadContext(hThread, &context);
+
+        if (context.Dr0 == debug->m_ptrBreakpointAddress) {
+
+            context.Dr0 = 0;
+            context.Dr7 &= ~0b00000000000000000000000000000001; // Clear DR0
+
+        }else if (context.Dr1 == debug->m_ptrBreakpointAddress) {
+
+            context.Dr1 = 0;
+            context.Dr7 &= ~0b00000000000000000000000000000010; // Clear DR1
+
+        }else if (context.Dr2 == debug->m_ptrBreakpointAddress) {
+
+            context.Dr2 = 0;
+            context.Dr7 &= ~0b00000000000000000000000000001100; // Clear DR2
+
+        }else if (context.Dr3 == debug->m_ptrBreakpointAddress) {
+
+            context.Dr3 = 0;
+            context.Dr7 &= ~0b00000000000000000000000000010000; // Clear DR3
+
+        }
+
+        SetThreadContext(hThread, &context);
+
+    #endif
+
+        this->m_debugRule = DebuggerEngine::CurrentDebuggerRule::BKPT_CONTINUE;
+
+        ResumeThread(hThread);
+
+        CloseHandle(hThread);
+
+    }else {
+
+        qDebug() << "InterruptType::BREAK_INT" ;
+
+        auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+
+        SuspendThread(hThread);
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        ARM64_NT_CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_ALL;
+
+        GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+        context.Pc = context.Pc - 4;
+
+        SetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+
+        CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_ALL;
+
+        GetThreadContext(hThread, &context);
+
+        context.Rip = context.Rip - 1;
+
+        SetThreadContext(hThread, &context);
+
+    #endif
+
+        WriteProcessMemory(this->hInternalDebugHandle, reinterpret_cast<PVOID>(debug->m_ptrBreakpointAddress), debug->m_ucOriginalOpcodes, debug->m_szOriginalOpcodes, NULL);
+
+        FlushInstructionCache(this->hInternalDebugHandle, reinterpret_cast<PVOID>(debug->m_ptrBreakpointAddress), 4);
+
+        this->m_debugRule = DebuggerEngine::CurrentDebuggerRule::BKPT_CONTINUE;
+
+        ResumeThread(hThread);
+
+        CloseHandle(hThread);
+
+    }
 
 }

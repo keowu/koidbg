@@ -2,7 +2,7 @@
     File: DisassemblerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 01/09/2024
+    Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -741,6 +741,9 @@ public:
 
     auto RunCapstoneEngineAarch64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes, DisasmEngineConfig engCfg) -> void;
     auto RunCapstoneEnginex86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes, DisasmEngineConfig engCfg) -> void;
+
+    auto RunCapstoneForStepOutARM64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t;
+    auto RunCapstoneForStepOutx86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t;
 
 };
 

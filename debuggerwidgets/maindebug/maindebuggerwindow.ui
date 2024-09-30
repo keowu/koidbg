@@ -15,6 +15,9 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabWidget">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -92,7 +95,10 @@
        <attribute name="title">
         <string>Command Console</string>
        </attribute>
-       <widget class="QTextEdit" name="textEdit">
+       <widget class="QTextEdit" name="outCommandConsole">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="geometry">
          <rect>
           <x>10</x>
@@ -105,7 +111,10 @@
          <bool>true</bool>
         </property>
        </widget>
-       <widget class="QLineEdit" name="lineEdit">
+       <widget class="QLineEdit" name="lnCommand">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="geometry">
          <rect>
           <x>10</x>
@@ -118,7 +127,10 @@
          <string>Enter with the command: !hk</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="btnSendCommand">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="geometry">
          <rect>
           <x>510</x>
@@ -209,14 +221,14 @@
      <widget class="QLabel" name="label_10">
       <property name="geometry">
        <rect>
-        <x>220</x>
-        <y>90</y>
+        <x>160</x>
+        <y>120</y>
         <width>691</width>
         <height>321</height>
        </rect>
       </property>
       <property name="text">
-       <string>It's LUA time, please connect your VSCODE to Start Automating HarukaMirai</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;To automate Haruka Mirai DBG you have some options:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1 - Use VSCODE to Write Scripts and control the debugger using the LUA Lang.&lt;/p&gt;&lt;p&gt;2 - Use IDA Pro Integration to control and syncronize your IDA Things and HarukaMirai Things.&lt;/p&gt;&lt;p&gt;3 - Use Haruka Mirai with Binary Ninja.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;THIS FEATURE IS ON DEVELOPMENT.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
     </widget>

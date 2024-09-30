@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/09/2024
+    Last Update: 29/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -13,6 +13,7 @@
 #include "debughandle.h"
 #include "debugmemory.h"
 #include "debugbreakpoint.h"
+#include "debuggercommands/SafeCommandQueue.hh"
 #include "qlistview.h"
 #include <QMainWindow>
 #include <QStatusBar>
@@ -20,6 +21,8 @@
 #include <QTimer>
 #include <QTableView>
 #include <QHeaderView>
+#include <QTextEdit>
+#include <QScrollBar>
 #include <QStandardItemModel>
 #include <QtConcurrent/QtConcurrent>
 #include "debuggerwidgets/custom/disasmview/harukadisasmview.h"
@@ -43,6 +46,7 @@ public:
         QTableView* tblInterrupts;
         HarukaDisasmView* tblDisasmVw;
         QHexView* qHexVw[3];
+        QTextEdit* outCommandConsole;
 
     };
 
@@ -76,6 +80,7 @@ public:
     //This is volatile, the value not be in the fucking cache, and not be shited by the MSVC optimization.
     volatile CurrentDebuggerCommand m_debugCommand{ DebuggerEngine::CurrentDebuggerCommand::RUNNING };
     volatile CurrentDebuggerRule m_debugRule{ DebuggerEngine::CurrentDebuggerRule::NO_RULE };
+    SafeCommandQueue m_commandProcessingQueue;
 
     /*
      * Stoping engine
@@ -86,6 +91,11 @@ public:
      * Execute a stepOver
      */
     auto stepOver() -> void;
+
+    /*
+     * Execute a StepInto
+     */
+    auto stepInto() -> void;
 
     /*
      * Execute a stepOut
@@ -130,6 +140,7 @@ private:
     GuiConfig m_guiCfg;
     BOOL m_StopDbg{FALSE};
     HANDLE m_hDebugLoop;
+    HANDLE m_hDebugCommandProcessingLoop;
 
     /*
      * Debugger Information data
@@ -147,6 +158,7 @@ private:
      */
     auto InitDebuggeeProcess() -> std::pair<STARTUPINFOEXW, PROCESS_INFORMATION>;
     static auto WINAPI DebugLoop(LPVOID args) -> DWORD;
+    static auto WINAPI DebugCommandProcessingLoop(LPVOID args) -> DWORD;
 
     /*
      * Event Dispatches

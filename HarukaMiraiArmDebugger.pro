@@ -20,6 +20,7 @@ SOURCES += \
     debuggerutils/utilswindowssyscall.cpp
 
 HEADERS += \
+    debuggercommands/SafeCommandQueue.hh \
     debuggerengine/DebuggerEngine.h \
     debuggerengine/debugbreakpoint.h \
     debuggerengine/debughandle.h \
@@ -33,7 +34,8 @@ HEADERS += \
     disassemblerengine/disassemblerengine.h \
     disassemblerengine/disassemblerutils.h \
     debuggerwidgets/maindebug/maindebuggerwindow.h \
-    debuggerutils/utilswindowssyscall.h
+    debuggerutils/utilswindowssyscall.h \
+    debuggercommands/lexer.hh
 
 LIBS += -lwtsapi32
 LIBS += -lAdvapi32

@@ -75,6 +75,18 @@ DebuggerEngine::DebuggerEngine(std::wstring processPath, DebuggerEngine::GuiConf
         NULL
 
     );
+
+    this->m_hDebugCommandProcessingLoop = CreateThread(
+
+        NULL,
+        NULL,
+        reinterpret_cast<LPTHREAD_START_ROUTINE>(DebuggerEngine::DebugCommandProcessingLoop),
+        this,
+        NULL,
+        NULL
+
+    );
+
 }
 
 DebuggerEngine::~DebuggerEngine() {
@@ -144,7 +156,6 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
     SetIPCallback callbackIP = std::bind(&DebuggerEngine::UpdateActualIPContext, thiz, std::placeholders::_1);
     thiz->m_guiCfg.tblDisasmVw->configureDisasm(hexViews, thiz->m_processInfo.second.hProcess, callbackBreakpoint, callbackIP);
 
-
     /*
     * Main debugger loop
     */
@@ -167,7 +178,9 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
 
                 break;
             case CREATE_THREAD_DEBUG_EVENT:
+
                 thiz->handleCreateThreadDebugEvent(dbgEvent.u.CreateThread);
+
                 break;
             case CREATE_PROCESS_DEBUG_EVENT:
 
@@ -175,23 +188,35 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
 
                 break;
             case EXIT_THREAD_DEBUG_EVENT:
+
                 thiz->handleExitThreadDebugEvent(dbgEvent.u.ExitThread);
+
                 break;
             case EXIT_PROCESS_DEBUG_EVENT:
+
                 thiz->handleExitProcessDebugEvent(dbgEvent.dwThreadId, dbgEvent.u.ExitProcess);
                 thiz->m_StopDbg = true;
+
                 break;
             case LOAD_DLL_DEBUG_EVENT:
+
                 thiz->handleLoadDllDebugEvent(dbgEvent.u.LoadDll);
+
                 break;
             case UNLOAD_DLL_DEBUG_EVENT:
+
                 thiz->handleUnloadDllDebugEvent(dbgEvent.u.UnloadDll);
+
                 break;
             case OUTPUT_DEBUG_STRING_EVENT:
+
                 thiz->handleOutputDebugStringEvent(dbgEvent.u.DebugString);
+
                 break;
             case RIP_EVENT:
+
                 thiz->handleRipEvent(dbgEvent.u.RipInfo);
+
                 break;
             }
 
@@ -214,6 +239,147 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
     }
 
     qDebug() << "End Debug loop.";
+    return 0;
+}
+
+
+auto DebuggerEngine::DebugCommandProcessingLoop(LPVOID args) -> DWORD {
+
+    qDebug() << "Starting debug command processing loop";
+
+    DebuggerEngine* thiz = reinterpret_cast<DebuggerEngine*>(args);
+
+    while (!thiz->m_StopDbg) {
+
+        if (thiz->m_commandProcessingQueue.isEmpty()) continue;
+
+        auto lexer = thiz->m_commandProcessingQueue.getBack();
+
+        if (!lexer) continue;
+
+        Token token = lexer->nextToken();
+
+        while (token.type != Token::TokenType::END) {
+
+            if (token.type == Token::TokenType::COMMAND) thiz->m_guiCfg.outCommandConsole->append("----------------------------------------\nNow processing command: " + token.value);
+
+            if (token.type == Token::TokenType::COMMAND && token.value == "!mem") {
+
+                auto arg0 = lexer->nextToken();
+                auto arg1 = lexer->nextToken();
+
+                if (arg0.value == "" || arg1.value == "") {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Invalid arguments.");
+
+                    goto ignore_command;
+                }
+
+                thiz->m_guiCfg.outCommandConsole->append("We're reading: " + arg0.value);
+                thiz->m_guiCfg.outCommandConsole->append("And displaying the content on: " + arg1.value + "st Memory Inspector tab!");
+
+                bool ok;
+                auto address = arg0.value.toULongLong(&ok, 16);
+
+                if (!ok) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("The argument 0 is not expected as Hexadecimal Valid Value!\nExample: 0x7f00000000000000(With or Without prefix)");
+
+                    goto ignore_command;
+
+                }
+
+                auto memoryInspectorIndex = arg1.value.toULongLong(&ok, 16);
+
+                if (!ok || memoryInspectorIndex > 2) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("The argument 1 is not expected as decimal Valid Value!\nExample: 0, 1, 2(The maximum Memory Inspector tabs available)");
+
+                    goto ignore_command;
+
+                }
+
+                PVOID pAddress = reinterpret_cast<PVOID>(address);
+
+                SIZE_T bytesRead;
+
+                MEMORY_BASIC_INFORMATION mb;
+
+                VirtualQueryEx(thiz->m_processInfo.second.hProcess, pAddress, &mb, sizeof(mb));
+
+                auto buffer = new char[mb.RegionSize]{ 0 };
+
+                if (ReadProcessMemory(thiz->m_processInfo.second.hProcess, pAddress, buffer, mb.RegionSize, &bytesRead)) { } else {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Error on processing buffer to display on Memory Inspector aborting!");
+
+                    goto ignore_command;
+                }
+
+                QByteArray byteArray(buffer, static_cast<int>(bytesRead));
+
+                thiz->m_guiCfg.qHexVw[memoryInspectorIndex]->clear();
+
+                thiz->m_guiCfg.qHexVw[memoryInspectorIndex]->fromMemoryBuffer(byteArray, reinterpret_cast<uintptr_t>(pAddress), 0);
+
+                delete[] buffer;
+
+            } else if (token.type == Token::TokenType::COMMAND && token.value == "!hk") {
+
+                thiz->m_guiCfg.outCommandConsole->append("We need to implement this command, but for now take this cool music: \nhttps://www.youtube.com/watch?v=tf61cA6a-N0");
+
+            } else if (token.type == Token::TokenType::COMMAND && (token.value == "!bs" || token.value == "!bh")) {
+
+                auto arg0 = lexer->nextToken();
+
+                if (arg0.value == "") {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Invalid argument.");
+
+                    goto ignore_command;
+                }
+
+                thiz->m_guiCfg.outCommandConsole->append("We put a Interrupt on: " + arg0.value);
+
+                bool ok;
+                auto address = arg0.value.toULongLong(&ok, 16);
+
+                if (!ok) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("The argument 0 is not expected as Hexadecimal Valid Value!\nExample: 0x7f00000000000000(With or Without prefix)");
+
+                    goto ignore_command;
+
+                }
+
+                if (token.value == "!bs") thiz->SetInterrupting(address, false);
+                else thiz->SetInterrupting(address, true);
+
+            }else {
+
+                thiz->m_guiCfg.outCommandConsole->append("This command not exist, ignoring.");
+
+            }
+
+ignore_command:
+
+            if (token.type == Token::TokenType::INVALID) break;
+
+            token = lexer->nextToken();
+
+            if (token.type == Token::TokenType::END) thiz->m_guiCfg.outCommandConsole->append("----------------------------------------\n");
+
+
+        }
+
+        thiz->m_commandProcessingQueue.popBack();
+
+        thiz->m_guiCfg.outCommandConsole->verticalScrollBar()->setValue(thiz->m_guiCfg.outCommandConsole->verticalScrollBar()->maximum());
+
+    }
+
+    qDebug() << "End debug command processing loop";
+
     return 0;
 }
 
@@ -265,6 +431,7 @@ auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTIO
 
 
 }
+
 
 auto DebuggerEngine::handleCreateThreadDebugEvent(const CREATE_THREAD_DEBUG_INFO& info) -> void {
 
@@ -1766,5 +1933,88 @@ auto DebuggerEngine::RemoveInterrupting(DebugBreakpoint* debug) -> void {
         CloseHandle(hThread);
 
     }
+
+}
+
+auto DebuggerEngine::stepInto() -> void {
+
+    qDebug() << "DebuggerEngine::stepInto";
+
+    auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, this->m_processInfo.second.dwThreadId);
+
+    SuspendThread(hThread);
+
+    DWORD64 Ip{ 0 };
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        ARM64_NT_CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_ALL;
+
+        GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+        Ip = context.Pc;
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+        CONTEXT context;
+
+        ZeroMemory(&context, sizeof(CONTEXT));
+        context.ContextFlags = CONTEXT_ALL;
+
+        GetThreadContext(hThread, &context);
+
+        Ip = context.Rip;
+
+    #endif
+
+    auto ucMemory = new unsigned char[0x10]{ 0 };
+
+    this->ReadMemory(Ip, ucMemory, 0x10);
+
+    DisassemblerEngine* disasm = new DisassemblerEngine();
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        auto stepInAddress = disasm->RunCapstoneForSingleStepARM64(Ip, ucMemory, 0x10);
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+
+        auto stepInAddress = disasm->RunCapstoneForSingleStepx86(Ip, ucMemory, 0x10);
+
+    #endif
+
+    delete disasm;
+    delete[] ucMemory;
+
+    if (stepInAddress != 0) {
+
+        qDebug() << "stepInAddress != 0";
+
+        #if defined(__aarch64__) || defined(_M_ARM64)
+
+            context.Pc = stepInAddress;
+
+            SetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+
+        #elif defined(__x86_64__) || defined(_M_X64)
+
+            context.Rip = stepInAddress;
+
+            SetThreadContext(hThread, &context);
+
+        #endif
+
+        ResumeThread(hThread);
+
+        this->DeleteAllDebuggerContext();
+
+        this->UpdateAllDebuggerContext(this->m_processInfo.second.dwThreadId);
+
+        this->m_guiCfg.statusbar->showMessage("[Information] StepIn Success!", 10000);
+    }
+
+    CloseHandle(hThread);
 
 }

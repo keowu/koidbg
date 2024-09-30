@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/09/2024
+    Last Update: 29/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -40,6 +40,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->btnStop, &QAction::triggered, this, &MainDebuggerWindow::onStopDebug);
     connect(ui->btnAbout, &QAction::triggered, this, &MainDebuggerWindow::onAbout);
     connect(ui->btnExit, &QAction::triggered, this, &MainDebuggerWindow::onExitClicked);
+    connect(ui->btnSendCommand, &QPushButton::clicked, this, &MainDebuggerWindow::OnCommandSendClicked);
 
     /*
      * Block ListView Edit Value
@@ -99,10 +100,20 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
     DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
                                       ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
                                       ui->tblHandles, ui->tblInterrupts, ui->tblDisasmVw,
-                                     { ui->memoryInspectorOne, ui->memoryInspectorTwo, ui->memoryInspectorThree }
+                                     { ui->memoryInspectorOne, ui->memoryInspectorTwo, ui->memoryInspectorThree },
+                                      ui->outCommandConsole
     };
 
     this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
+
+    //________________________________________________________
+    //Enable the command interface for the ursers
+    //________________________________________________________
+    this->ui->lnCommand->setEnabled(true);
+
+    this->ui->outCommandConsole->setEnabled(true);
+
+    this->ui->btnSendCommand->setEnabled(true);
 
 }
 
@@ -204,7 +215,7 @@ void MainDebuggerWindow::onStepOut() {
 
 void MainDebuggerWindow::onStepIn() {
 
-    qDebug() << "MainDebuggerWindow::onStepIn";
+    this->m_dbgEngine->stepInto();
 
 }
 
@@ -227,11 +238,19 @@ void MainDebuggerWindow::onAbout() {
     QMessageBox msgBox;
 
     msgBox.setWindowTitle("About HarukaMirai DBG");
-    msgBox.setText("(C) Fluxuss Software Security, LLC - HarukaDBG\n\nThis Version is Licensed to: João Vitor(@Keowu)\n\nModules for this license:\n- X86_64\n- ARM64\n\nVersion: 1.51.3");
+    msgBox.setText("(C) Fluxuss Software Security, LLC - HarukaDBG\n\nThis Version is Licensed to: João Vitor(@Keowu)\n\nVersion: 1.51.3");
     msgBox.setIcon(QMessageBox::Information);
     msgBox.setStandardButtons(QMessageBox::Ok);
 
     msgBox.exec();
+
+}
+
+auto MainDebuggerWindow::OnCommandSendClicked() -> void {
+
+    this->ui->outCommandConsole->append("We put the command: " + this->ui->lnCommand->text() + " for processing.");
+
+    this->m_dbgEngine->m_commandProcessingQueue.push_back(new Lexer(this->ui->lnCommand->text()));
 
 }
 

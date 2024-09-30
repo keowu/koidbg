@@ -36,7 +36,7 @@ namespace DisassemblerUtils {
 
         auto is_imm_controlflow_exchange(const cs_insn& insn) -> bool {
             static const QSet<QString> controlFlowMnemonics = {
-                "je", "jne", "jb", "jbe", "jc", "ja", "jae", "jz", "jnz",
+                "je", "jne", "jb", "call", "jbe", "jc", "ja", "jae", "jz", "jnz",
                 "jnp", "jpo", "jp", "jo", "jno", "js", "jns", "jl", "jle", "jg",
                 "jge", "loop", "loopz", "loope", "loopnz", "loopne", "ret", "iret"
             };

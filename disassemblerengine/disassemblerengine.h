@@ -745,6 +745,9 @@ public:
     auto RunCapstoneForStepOutARM64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t;
     auto RunCapstoneForStepOutx86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t;
 
+    auto RunCapstoneForSingleStepARM64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t;
+    auto RunCapstoneForSingleStepx86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t;
+
 };
 
 #endif // DISASSEMBLERENGINE_H

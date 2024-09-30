@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/09/2024
+    Last Update: 29/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -44,6 +44,7 @@ private slots:
     void onAbout();
     void onExitClicked();
     auto OnInterruptListRowClicked(const QModelIndex &index) -> void;
+    auto OnCommandSendClicked() -> void;
 
 private:
     Ui::MainDebuggerWindow *ui;

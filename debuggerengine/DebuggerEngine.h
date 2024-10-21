@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 29/09/2024
+    Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -187,9 +187,10 @@ private:
     auto IsPE(uintptr_t pAddress) -> bool;
 
     /*
-     * Handle & Handlers Utils
+     * Handle/Handlers & List Utils
     */
     auto ListAllHandleObjectsForDebugeeProcess() -> void;
+    auto ListAddModule(DebugModule dbgModule) -> void;
 
    /*
     * Debugger GUI User Interaction
@@ -209,6 +210,7 @@ private:
      */
     auto UpdateDisassemblerView(const DWORD dwTID) -> void;
     auto UpdateActualIPContext(uintptr_t uipAddressToIP) -> void;
+    auto UpdateDisassemblerView(const uintptr_t uipAddress) -> void;
 
 };
 

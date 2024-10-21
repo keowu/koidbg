@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 29/09/2024
+    Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -13,6 +13,7 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include "debuggerengine/DebuggerEngine.h"
+#include <KurumiParser.hh>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -45,6 +46,8 @@ private slots:
     void onExitClicked();
     auto OnInterruptListRowClicked(const QModelIndex &index) -> void;
     auto OnCommandSendClicked() -> void;
+    auto OnCommandClearClicked() -> void;
+    auto onRegisterClicked(const QModelIndex &index) -> void;
 
 private:
     Ui::MainDebuggerWindow *ui;

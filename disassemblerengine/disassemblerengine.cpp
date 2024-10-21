@@ -2,7 +2,7 @@
     File: DisassemblerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/09/2024
+    Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -88,7 +88,7 @@ auto DisassemblerEngine::RunCapstoneEngineAarch64(uintptr_t uipVirtualAddress, u
                 QString bytesStr = bytesArray.toHex(' ').toLower();
 
                 // Getting IP index to change table cursor position
-                if (engCfg.actualIP == insn[j].address) *engCfg.tblIPidx = j;
+                if (engCfg.actualIP == insn[j].address) if (engCfg.tblIPidx) *engCfg.tblIPidx = j;
 
                 // Append the row to the model
                 QList<QStandardItem*> rowItems;
@@ -188,7 +188,7 @@ auto DisassemblerEngine::RunCapstoneEnginex86(uintptr_t uipVirtualAddress, unsig
                 QString bytesStr = bytesArray.toHex(' ').toLower();
 
                 // Getting RIP index to change table cursor position
-                if (engCfg.actualIP == insn[j].address) *engCfg.tblIPidx = j;
+                if (engCfg.actualIP == insn[j].address) if (engCfg.tblIPidx) *engCfg.tblIPidx = j;
 
                 // Append the row to the model
                 QList<QStandardItem*> rowItems;

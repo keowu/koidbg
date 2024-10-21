@@ -2,7 +2,7 @@
     File: lexer.hh
     Author: João Vitor(@Keowu)
     Created: 29/09/2024
-    Last Update: 29/09/2024
+    Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -41,6 +41,8 @@ public:
 
         if (current == '!') {
             return parseCommand();
+        } else if (current == '"') {
+            return parseQuotedArgument();
         } else if (current.isDigit() || (current == '0' && position_ + 1 < input_.size() && input_[position_ + 1] == 'x')) {
             return parseArgument();
         } else if (current.isLetter() || current == '\\') {
@@ -73,6 +75,19 @@ private:
         while (position_ < input_.size() && !input_[position_].isSpace()) {
             ++position_;
         }
+        return Token(Token::TokenType::ARGUMENT, input_.mid(start, position_ - start));
+    }
+
+    Token parseQuotedArgument() {
+        int start = position_++;
+        while (position_ < input_.size() && input_[position_] != '"') {
+            ++position_;
+        }
+
+        if (position_ < input_.size()) {
+            position_++; // Skip the closing quote
+        }
+
         return Token(Token::TokenType::ARGUMENT, input_.mid(start, position_ - start));
     }
 };

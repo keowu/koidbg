@@ -2,7 +2,7 @@
     File: utilswindowssycall.h
     Author: João Vitor(@Keowu)
     Created: 24/07/2024
-    Last Update: 09/08/2024
+    Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -17,6 +17,7 @@
 #include <QMainWindow>
 #include <QtCore/QString>
 #include <QtCore/QDebug>
+
 
 #define ThreadBasicInformation 0
 
@@ -563,6 +564,17 @@ inline auto GetRemoteHandleTableHandleInformation(const DWORD dwDebugProcPid, co
     );
 }
 
+/*
+namespace Liefzin {
+
+inline auto isArm64(QString filePath) -> bool {
+    #include <LIEF/LIEF.hpp>
+    std::unique_ptr<LIEF::PE::Binary> binary = LIEF::PE::Parser::parse(filePath.toStdString());
+
+    return binary->header().machine() == LIEF::PE::Header::MACHINE_TYPES::ARM64;
+}
+
+}*/
 
 //FEATURE PARA DUMPAR OS HANDLERS:
 //https://dimitrifourny.github.io/2020/06/11/dumping-veh-win10.html

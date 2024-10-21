@@ -42,6 +42,11 @@
         <height>381</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
      </widget>
      <widget class="QLabel" name="label">
       <property name="geometry">
@@ -77,6 +82,11 @@
         <width>251</width>
         <height>231</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <fontweight>DemiBold</fontweight>
+       </font>
       </property>
      </widget>
      <widget class="QTabWidget" name="tabWidget_2">
@@ -124,7 +134,7 @@
          </rect>
         </property>
         <property name="placeholderText">
-         <string>Enter with the command: !hk</string>
+         <string>Enter with a command example: !hk</string>
         </property>
        </widget>
        <widget class="QPushButton" name="btnSendCommand">
@@ -143,7 +153,7 @@
          <string>Send</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="pushButton_2">
+       <widget class="QPushButton" name="btnClear">
         <property name="geometry">
          <rect>
           <x>590</x>
@@ -153,7 +163,7 @@
          </rect>
         </property>
         <property name="text">
-         <string>Help</string>
+         <string>Clear</string>
         </property>
        </widget>
       </widget>
@@ -245,6 +255,11 @@
         <height>20</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
       <property name="text">
        <string>Software and Hardware Interrupting List:</string>
       </property>
@@ -273,6 +288,11 @@
         <height>21</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
       <property name="text">
        <string>Most Important Stack Tracing for the current program Context:</string>
       </property>
@@ -300,6 +320,11 @@
         <width>381</width>
         <height>20</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
       </property>
       <property name="text">
        <string>Complete debugee program memory layout:</string>
@@ -380,6 +405,11 @@
         <height>20</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
       <property name="text">
        <string>All Threads for the debuggee process:</string>
       </property>
@@ -408,6 +438,11 @@
         <height>20</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
       <property name="text">
        <string>Completely Handle table for the debuggee process:</string>
       </property>
@@ -425,15 +460,46 @@
     </widget>
     <widget class="QWidget" name="tab_13">
      <attribute name="title">
-      <string>Handlers</string>
+      <string>VEH/Generic-Handlers</string>
      </attribute>
+     <widget class="QListView" name="lsRegisteredVehs">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>40</y>
+        <width>931</width>
+        <height>281</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_11">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>10</y>
+        <width>181</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Process registered VEHs:</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_6">
      <attribute name="title">
-      <string>Pdb Parser</string>
+      <string>Pdb Inpector</string>
      </attribute>
     </widget>
     <widget class="QWidget" name="tab_12">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <attribute name="title">
       <string>Decompiler</string>
      </attribute>
@@ -495,11 +561,17 @@
    </property>
   </action>
   <action name="btnAttachProcessContainer">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Attach Process Container</string>
    </property>
   </action>
   <action name="btnDebugDynamicLibrary">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Debug a Dynamic Link Library</string>
    </property>

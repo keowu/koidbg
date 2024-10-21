@@ -2,7 +2,7 @@
     File: SafeCommandQueue.hh
     Author: João Vitor(@Keowu)
     Created: 29/09/2024
-    Last Update: 29/09/2024
+    Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -25,7 +25,7 @@ public:
         return m_consoleCommandsToProcess;
     }
 
-    Lexer* getBack() { // Marked as volatile for volatile instances
+    Lexer* getBack() {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_consoleCommandsToProcess.back();
     }

@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 29/09/2024
+    Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -24,6 +24,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     /*
      *  Disable MAXIMIZE Button and Disable FORM Resizing
     */
+    setFixedSize(size());
     setWindowFlags(windowFlags() & ~Qt::WindowMaximizeButtonHint);
     setWindowFlags(Qt::MSWindowsFixedSizeDialogHint);
 
@@ -41,6 +42,8 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->btnAbout, &QAction::triggered, this, &MainDebuggerWindow::onAbout);
     connect(ui->btnExit, &QAction::triggered, this, &MainDebuggerWindow::onExitClicked);
     connect(ui->btnSendCommand, &QPushButton::clicked, this, &MainDebuggerWindow::OnCommandSendClicked);
+    connect(ui->btnClear, &QPushButton::clicked, this, &MainDebuggerWindow::OnCommandClearClicked);
+    connect(ui->lstRegisters, &QListView::clicked, this, &MainDebuggerWindow::onRegisterClicked);
 
     /*
      * Block ListView Edit Value
@@ -96,6 +99,17 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
 
         return;
     }
+
+    if (!Kurumi::IsArm64(filePath.toStdString())) {
+
+        qDebug() << "MiIsArm64:: Return false! Not supported PE FILE.";
+
+        return;
+    }
+
+    //Code snippet test for new feature for VEH Table
+    //qDebug() << "Kurumi::InitKurumiHKPDB: " << Kurumi::InitKurumiHKPDB("C:\\Users\\Keowu\\Downloads\\arm64\\ntdll.dll");
+
 
     DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
                                       ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
@@ -238,7 +252,7 @@ void MainDebuggerWindow::onAbout() {
     QMessageBox msgBox;
 
     msgBox.setWindowTitle("About HarukaMirai DBG");
-    msgBox.setText("(C) Fluxuss Software Security, LLC - HarukaDBG\n\nThis Version is Licensed to: João Vitor(@Keowu)\n\nVersion: 1.51.3");
+    msgBox.setText("(C) Fluxuss Software Security, LLC - HarukaDBG\n\nThis Version is Licensed to: João Vitor(@Keowu)\n\nVersion: DEV");
     msgBox.setIcon(QMessageBox::Information);
     msgBox.setStandardButtons(QMessageBox::Ok);
 
@@ -248,9 +262,33 @@ void MainDebuggerWindow::onAbout() {
 
 auto MainDebuggerWindow::OnCommandSendClicked() -> void {
 
-    this->ui->outCommandConsole->append("We put the command: " + this->ui->lnCommand->text() + " for processing.");
+    if (!this->ui->lnCommand->text().isEmpty()) {
 
-    this->m_dbgEngine->m_commandProcessingQueue.push_back(new Lexer(this->ui->lnCommand->text()));
+        this->ui->outCommandConsole->append("We put the command: " + this->ui->lnCommand->text() + " for processing.");
+
+        this->m_dbgEngine->m_commandProcessingQueue.push_back(new Lexer(this->ui->lnCommand->text()));
+
+    }
+
+    this->ui->lnCommand->clear();
+
+}
+
+auto MainDebuggerWindow::onRegisterClicked(const QModelIndex &index) -> void {
+
+    if (!index.isValid()) return;
+
+    auto model = this->ui->lstRegisters->model();
+
+    this->ui->outCommandConsole->append(model->data(index).toString());
+
+    //TODO MAKE BEATIFUL THE FLAGS FOR ARM64 AND X86_64 AND ALSO DISPLAY
+
+}
+
+auto MainDebuggerWindow::OnCommandClearClicked() -> void {
+
+    this->ui->outCommandConsole->clear();
 
 }
 

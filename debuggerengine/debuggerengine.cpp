@@ -2,10 +2,11 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/09/2024
+    Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
+#include <bitset>
 #include "debuggerengine.h"
 #include "qstringlistmodel.h"
 #include "disassemblerengine/disassemblerengine.h"
@@ -133,7 +134,6 @@ auto DebuggerEngine::stopEngine() -> void {
     this->m_StopDbg = TRUE;
 
 }
-
 
 auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
 
@@ -268,7 +268,7 @@ auto DebuggerEngine::DebugCommandProcessingLoop(LPVOID args) -> DWORD {
                 auto arg0 = lexer->nextToken();
                 auto arg1 = lexer->nextToken();
 
-                if (arg0.value == "" || arg1.value == "") {
+                if (arg0.value.isEmpty() || arg1.value.isEmpty()) {
 
                     thiz->m_guiCfg.outCommandConsole->append("Invalid arguments.");
 
@@ -301,13 +301,13 @@ auto DebuggerEngine::DebugCommandProcessingLoop(LPVOID args) -> DWORD {
 
                 PVOID pAddress = reinterpret_cast<PVOID>(address);
 
-                SIZE_T bytesRead;
-
                 MEMORY_BASIC_INFORMATION mb;
 
                 VirtualQueryEx(thiz->m_processInfo.second.hProcess, pAddress, &mb, sizeof(mb));
 
                 auto buffer = new char[mb.RegionSize]{ 0 };
+
+                SIZE_T bytesRead { 0 };
 
                 if (ReadProcessMemory(thiz->m_processInfo.second.hProcess, pAddress, buffer, mb.RegionSize, &bytesRead)) { } else {
 
@@ -332,7 +332,7 @@ auto DebuggerEngine::DebugCommandProcessingLoop(LPVOID args) -> DWORD {
 
                 auto arg0 = lexer->nextToken();
 
-                if (arg0.value == "") {
+                if (arg0.value.isEmpty()) {
 
                     thiz->m_guiCfg.outCommandConsole->append("Invalid argument.");
 
@@ -355,7 +355,160 @@ auto DebuggerEngine::DebugCommandProcessingLoop(LPVOID args) -> DWORD {
                 if (token.value == "!bs") thiz->SetInterrupting(address, false);
                 else thiz->SetInterrupting(address, true);
 
-            }else {
+            } else if (token.type == Token::TokenType::COMMAND && token.value == "!memclear") {
+
+                auto arg0 = lexer->nextToken();
+
+                if (arg0.value.isEmpty()) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Invalid arguments.");
+
+                    goto ignore_command;
+                }
+
+                thiz->m_guiCfg.outCommandConsole->append("Now we're cleaning: " + arg0.value + "st Memory Inspector.");
+
+                bool ok;
+                auto memoryInspectorIndex = arg0.value.toULongLong(&ok, 16);
+
+                if (!ok || memoryInspectorIndex > 2) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("The argument 0 is not expected as decimal Valid Value!\nExample: 0, 1, 2(The maximum Memory Inspector tabs available)");
+
+                    goto ignore_command;
+
+                }
+
+                 thiz->m_guiCfg.qHexVw[memoryInspectorIndex]->clear();
+
+            } else if (token.type == Token::TokenType::COMMAND && token.value == "!memsave") {
+
+                auto arg0 = lexer->nextToken();
+
+                auto arg1 = lexer->nextToken();
+
+                auto arg2 = lexer->nextToken();
+
+                if (arg0.value.isEmpty() || arg1.value.isEmpty() || arg2.value.isEmpty()) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Invalid Arguments");
+
+                    goto ignore_command;
+
+                }
+
+                bool ok;
+                auto address = arg1.value.toULongLong(&ok, 16);
+                if (!ok) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("The argument 1 is not expected as Hexadecimal Valid Value!\nExample: 0x7f00000000000000(With or Without prefix)");
+
+                    goto ignore_command;
+
+                }
+
+                auto size = arg2.value.toULongLong(&ok, 16);
+                if (!ok || !size) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("The argument 2 is not expected as Hexadecimal Valid Value!\nExample: 0x7f00000000000000(With or Without prefix)");
+
+                    goto ignore_command;
+
+                }
+
+                auto buffer = new char[size]{ 0 };
+
+                if (ReadProcessMemory(thiz->m_processInfo.second.hProcess, reinterpret_cast<PVOID>(address), buffer, size, NULL)) { } else {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Error on processing buffer to save on a disk-file!");
+
+                    goto ignore_command;
+                }
+
+                QFile outFile(arg0.value.replace("\"", ""));
+
+                if (!outFile.open(QIODevice::WriteOnly)) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Error opening file for writing on disk!");
+
+                    goto ignore_command;
+                }
+
+                outFile.write(buffer, size);
+
+                outFile.close();
+
+                thiz->m_guiCfg.outCommandConsole->append("Saved with sucess on " + arg0.value);
+
+                delete[] buffer;
+
+            } else if (token.type == Token::TokenType::COMMAND && token.value == "!br") {
+
+                auto arg0 = lexer->nextToken();
+
+                if (arg0.value.isEmpty()) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Invalid Arguments");
+
+                    goto ignore_command;
+                }
+
+                bool ok;
+                auto address = arg0.value.toULongLong(&ok, 16);
+                if (!ok) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("The argument is not expected as Hexadecimal Valid Value!\nExample: 0x7f00000000000000(With or Without prefix)");
+
+                    goto ignore_command;
+                }
+
+                auto i = -1;
+                for (auto& dbgBreakpoint : thiz->m_debugBreakpoint) {
+
+                    i++;
+                    if (dbgBreakpoint->m_ptrBreakpointAddress != address) continue;
+
+                    thiz->RemoveInterrupting(dbgBreakpoint);
+
+                    QStandardItemModel *model = qobject_cast<QStandardItemModel *>(thiz->m_guiCfg.tblInterrupts->model());
+
+                    if (model) if (i >= 0 && i < model->rowCount()) model->removeRow(i);
+
+                    thiz->removeBreakpointItemByIndex(i);
+
+                    break;
+                }
+
+                thiz->m_guiCfg.outCommandConsole->append("Sucess removed breakpoint from 0x" + QString::number(address, 16) + "!");
+
+            } else if (token.type == Token::TokenType::COMMAND && token.value == "!vw") {
+
+                auto arg0 = lexer->nextToken();
+
+                if (arg0.value.isEmpty()) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("Invalid Arguments");
+
+                    goto ignore_command;
+                }
+
+                bool ok;
+                auto address = arg0.value.toULongLong(&ok, 16);
+                if (!ok) {
+
+                    thiz->m_guiCfg.outCommandConsole->append("The argument is not expected as Hexadecimal Valid Value!\nExample: 0x7f00000000000000(With or Without prefix)");
+
+                    goto ignore_command;
+                }
+
+                //Inspect DisasmView on a Custom Address
+                thiz->UpdateDisassemblerView(address);
+
+            } else if (token.type == Token::TokenType::COMMAND && token.value == "!imgbase") {
+
+                thiz->m_guiCfg.outCommandConsole->append("Image Base for Debugee Process: 0x" + QString::number(thiz->m_debugModules.at(0).m_lpModuleBase, 16));
+
+            } else {
 
                 thiz->m_guiCfg.outCommandConsole->append("This command not exist, ignoring.");
 
@@ -374,7 +527,8 @@ ignore_command:
 
         thiz->m_commandProcessingQueue.popBack();
 
-        thiz->m_guiCfg.outCommandConsole->verticalScrollBar()->setValue(thiz->m_guiCfg.outCommandConsole->verticalScrollBar()->maximum());
+        if (thiz->m_guiCfg.outCommandConsole->document()->blockCount() > 0)
+            thiz->m_guiCfg.outCommandConsole->verticalScrollBar()->setValue(thiz->m_guiCfg.outCommandConsole->verticalScrollBar()->maximum());
 
     }
 
@@ -498,6 +652,22 @@ auto DebuggerEngine::handleCreateProcessDebugEvent(const CREATE_PROCESS_DEBUG_IN
 
     this->m_debugThreads.push_back(dbgThread);
 
+    /*
+     * Retrieving the input executable imagebase
+     */
+    MEMORY_BASIC_INFORMATION mb{ 0 };
+    VirtualQueryEx(this->hInternalDebugHandle, reinterpret_cast<PVOID>(info.lpStartAddress), &mb, sizeof(mb));
+
+    DebugModule dbgModule(
+
+        this->hInternalDebugHandle,
+        "[DEBUGEE PROCESS]",
+        reinterpret_cast<uintptr_t>(mb.AllocationBase)
+
+    );
+
+    this->ListAddModule(dbgModule);
+
 }
 
 auto DebuggerEngine::handleExitThreadDebugEvent(const EXIT_THREAD_DEBUG_INFO& info) -> void {
@@ -532,18 +702,7 @@ auto DebuggerEngine::handleLoadDllDebugEvent(const LOAD_DLL_DEBUG_INFO& info) ->
 
     );
 
-    //If not is a valid pe. just return and end our search because this module is invalid.
-    if (!this->IsPE(dbgModule.m_lpModuleBase)) return;
-
-
-    this->AddStringToListView(this->m_guiCfg.lstModules, QString(
-                                                             "BASE: 0x%1, MODULE NAME: %2"
-                                                             ).arg(
-                                                                 QString::number(dbgModule.m_lpModuleBase, 16),
-                                                                 dbgModule.m_qStName
-                                                             ));
-
-    this->m_debugModules.push_back(dbgModule);
+    this->ListAddModule(dbgModule);
 
 }
 
@@ -603,6 +762,71 @@ auto DebuggerEngine::UpdateAllDebuggerContext(const DWORD dwTID) -> void {
     this->m_guiCfg.lstCallStack->viewport()->update();
 
     this->m_guiCfg.lstRegisters->viewport()->update();
+
+}
+
+auto DebuggerEngine::UpdateDisassemblerView(const uintptr_t uipAddress) -> void {
+
+    /*
+     * Deleting old table model
+     */
+    QStandardItemModel *disasmModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.tblDisasmVw->model());
+
+    if (disasmModel) disasmModel->clear();
+    else {
+
+        disasmModel = new QStandardItemModel();
+        this->m_guiCfg.tblDisasmVw->setModel(disasmModel);
+
+    }
+
+    MEMORY_BASIC_INFORMATION mb{ 0 };
+
+    if (!VirtualQueryEx(this->hInternalDebugHandle, reinterpret_cast<PVOID>(uipAddress), &mb, sizeof(mb))) return;
+
+    DisasmEngineConfig engCfg{
+
+        disasmModel,
+        this->hInternalDebugHandle,
+        this->m_guiCfg.tblDisasmVw,
+        uipAddress,
+        NULL
+
+    };
+
+    auto regionSize = mb.RegionSize - (uipAddress - reinterpret_cast<uintptr_t>(mb.BaseAddress));
+
+    auto ucOpcodes = new unsigned char [regionSize] { 0 };
+
+    DisassemblerEngine *disasm = new DisassemblerEngine();
+
+    disasmModel->clear();
+
+    disasmModel->setHorizontalHeaderLabels(QStringList() << "Address" << "Opcode" << "Disasm" << "Anotations");
+
+    #if defined(__aarch64__) || defined(_M_ARM64)
+
+        this->ReadMemory(uipAddress, ucOpcodes, regionSize);
+
+        disasm->RunCapstoneEngineAarch64(uipAddress, ucOpcodes, regionSize, engCfg);
+
+    #elif defined(__x86_64__) || defined(_M_X64)
+
+        this->ReadMemory(uipAddress, ucOpcodes, regionSize);
+
+        disasm->RunCapstoneEnginex86(uipAddress, ucOpcodes, regionSize, engCfg);
+
+    #endif
+
+    if (disasm) delete disasm;
+
+    if (ucOpcodes) delete []ucOpcodes;
+
+    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(3, 102); //Info Column Display
+
+    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(2, 360); //Disasm Column Display
+
+    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(1, 102); //Opcodes Column Display
 
 }
 
@@ -889,13 +1113,13 @@ auto DebuggerEngine::UpdateDisassemblerView(const DWORD dwTID) -> void {
     */
     this->m_guiCfg.tblDisasmVw->resizeColumnsToContents();
 
-    this->m_guiCfg.tblDisasmVw->resizeRowsToContents();
+    //this->m_guiCfg.tblDisasmVw->resizeRowsToContents();
 
-    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(3, 100); //Info Column Display
+    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(3, 102); //Info Column Display
 
     this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(2, 360); //Disasm Column Display
 
-    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(1, 100); //Opcodes Column Display
+    this->m_guiCfg.tblDisasmVw->horizontalHeader()->resizeSection(1, 102); //Opcodes Column Display
 
 }
 
@@ -936,7 +1160,12 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
         const std::vector<std::pair<const char*, uint64_t>> arm64GeneralRegisters = {
 
-            {"X0", context.X0},
+            {"FP", context.Fp},
+            {"LR", context.Lr},
+            {"PC", context.Pc},
+            {"SP", context.Sp},
+
+            {"\nX0", context.X0},
             {"X1", context.X1},
             {"X2", context.X2},
             {"X3", context.X3},
@@ -964,11 +1193,7 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
             {"X25", context.X25},
             {"X26", context.X26},
             {"X27", context.X27},
-            {"X28", context.X28},
-            {"FP", context.Fp},
-            {"LR", context.Lr},
-            {"PC", context.Pc},
-            {"SP", context.Sp}
+            {"X28", context.X28}
 
         };
 
@@ -988,9 +1213,74 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
         }
 
-        this->AddStringToListView(this->m_guiCfg.lstRegisters, QString::asprintf("CPSR: %08X", context.Cpsr));
+        //Snippet cool from https://gist.github.com/jroelofs/126d2563f9c32f7e7353
+        QString Cpsr = "\nCPSR:\n";
+        Cpsr.append("N: " + QString::number((context.Cpsr >> 31) &  1));
+        Cpsr.append(" Z: " + QString::number((context.Cpsr >> 30) &  1));
+        Cpsr.append(" C: " + QString::number((context.Cpsr >> 29) &  1));
+        Cpsr.append(" \nV: " + QString::number((context.Cpsr >> 28) &  1));
+        Cpsr.append(" Q: " + QString::number((context.Cpsr >> 27) &  1));
+        Cpsr.append(" J: " + QString::number((context.Cpsr >> 24) &  1));
+        Cpsr.append(" GE: " + QString::number((context.Cpsr >> 16) &  1));
+        Cpsr.append(" \nE: " + QString::number((context.Cpsr >> 9) &  1));
+        Cpsr.append(" A: " + QString::number((context.Cpsr >> 8) &  1));
+        Cpsr.append(" I: " + QString::number((context.Cpsr >> 7) &  1));
+        Cpsr.append(" F: " + QString::number((context.Cpsr >> 6) &  1));
+        Cpsr.append(" \nT: " + QString::number((context.Cpsr >> 5) &  1));
+        Cpsr.append(" M: " + QString::number((context.Cpsr >> 0) &  1));
 
-        //TODO: Explorar demais registradores diponíveis, ELR, SPSR, BCR etc
+        this->AddStringToListView(this->m_guiCfg.lstRegisters, Cpsr+"\n");
+
+        //BCR & BVR
+        //QString Bcr = "BCR:\n";
+        QString Bvr = "BVR:\n";
+        for (auto i = 0; i < ARM64_MAX_BREAKPOINTS; i++)
+            //Bcr.append("0x" + QString::number(context.Bcr[i], 16));
+            Bvr.append("0x" + QString::number(context.Bvr[i], 16).rightJustified(16, '0') + "\n");
+
+        //this->AddStringToListView(this->m_guiCfg.lstRegisters, Bcr+"\n");
+        this->AddStringToListView(this->m_guiCfg.lstRegisters, Bvr);
+
+        //TODO: ARM64_NT_NEON128
+        const char* neonRegisters[] = {
+
+            "S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7",
+            "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15",
+            "S16", "S17", "S18", "S19", "S20", "S21", "S22", "S23",
+            "S24", "S25", "S26", "S27", "S28", "S29", "S30", "S31"
+
+        };
+
+        const ARM64_NT_NEON128 neonRegistersContext[] = {
+
+            context.V[0], context.V[1], context.V[2], context.V[3],
+            context.V[4], context.V[5], context.V[6], context.V[7],
+            context.V[8], context.V[9], context.V[10], context.V[11],
+            context.V[12], context.V[13], context.V[14], context.V[15],
+            context.V[16], context.V[17], context.V[18], context.V[19],
+            context.V[20], context.V[21], context.V[22], context.V[23],
+            context.V[24], context.V[25], context.V[26], context.V[27],
+            context.V[28], context.V[29], context.V[30], context.V[31]
+
+        };
+
+        for (size_t i = 0; i < 32; ++i) {
+
+            const auto& reg = neonRegistersContext[i];
+
+            this->AddStringToListView(
+                this->m_guiCfg.lstRegisters,
+                QString::asprintf(
+                    "%s: 0x%016llX%016llX",
+                    neonRegisters[i],
+                    reg.High,
+                    reg.Low
+                )
+            );
+
+        }
+
+        //TODO: Explorar demais registradores diponíveis, ELR, SPSR(não tem em user land: https://esr.arm64.dev/), etc
 
         auto callstack = UtilsWindowsSyscall::updateCallStackContext(
 
@@ -1054,12 +1344,34 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
         }
 
-        this->AddStringToListView(this->m_guiCfg.lstRegisters, QString(
-                                                                   "EFLAGS: 0x%1(TO PARSE FIELDS)"
-                                                                   ).arg(QString::asprintf("%016llX", context.EFlags)));
+        std::bitset<64> flags(context.EFlags);
+        QString Eflags = "\nEFLAGS:\n";
+        Eflags.append("CF:" + QString::number(flags.test(0)));
+        Eflags.append(" PF: " + QString::number(flags.test(2)));
+        Eflags.append(" AF: " + QString::number(flags.test(4)));
+        Eflags.append(" \nZF: " + QString::number(flags.test(6)));
+        Eflags.append(" SF: " + QString::number(flags.test(7)));
+        Eflags.append(" TF: " + QString::number(flags.test(8)));
+        Eflags.append(" \nIF: " + QString::number(flags.test(9)));
+        Eflags.append(" DF: " + QString::number(flags.test(10)));
+        Eflags.append(" OF: " + QString::number(flags.test(11)));
+        //Eflags.append(" IOPL: " + QString::number(flags.test(12)));
+        //Eflags.append(" NT: " + QString::number(flags.test(14)));
+        //Eflags.append(" RF: " + QString::number(flags.test(16)));
+        //Eflags.append(" \nVM: " + QString::number(flags.test(17)));
+        //Eflags.append(" AC: " + QString::number(flags.test(18)));
+        //Eflags.append(" VIF: " + QString::number(flags.test(19)));
+        //Eflags.append(" VIP: " + QString::number(flags.test(20)));
+        //Eflags.append(" ID: " + QString::number(flags.test(21)));
+
+
 
         this->AddStringToListView(this->m_guiCfg.lstRegisters, QString(
-                                                                   "CS: 0x%1 | GS: 0x%2 | ES: 0x%3 | SS: 0x%4 | DS: 0x%5 | FS: 0x%6"
+                                                                   "%1"
+                                                                   ).arg(Eflags+"\n"));
+
+        this->AddStringToListView(this->m_guiCfg.lstRegisters, QString(
+                                                                   "CS: 0x%1 | GS: 0x%2 | ES: 0x%3\nSS: 0x%4 | DS: 0x%5 | FS: 0x%6\n"
                                                                    ).arg(
                                                                        QString::asprintf("%04X", context.SegCs),
                                                                        QString::asprintf("%04X", context.SegGs),
@@ -1107,7 +1419,7 @@ auto DebuggerEngine::updateRegistersContext(const DWORD dwTID) -> void {
 
         const std::vector<std::pair<const char*, uint64_t>> debugRegisters = {
 
-            {"DR0", context.Dr0},
+            {"\nDR0", context.Dr0},
             {"DR1", context.Dr1},
             {"DR2", context.Dr2},
             {"DR3", context.Dr3},
@@ -1641,8 +1953,6 @@ auto DebuggerEngine::SetInterrupting(uintptr_t uipAddressBreak, bool isHardware)
                                                   << (isHardware ? new QStandardItem(QString("Hardware")) : new QStandardItem(QString("Software")))
         );
 
-
-
     /*
      * Adjust Columns and Rows Sizes
     */
@@ -1811,6 +2121,22 @@ auto DebuggerEngine::stepOut() -> void {
     this->m_debugRule = DebuggerEngine::BKPT_CONTINUE;
 
     this->m_debugCommand = DebuggerEngine::RUNNING;
+}
+
+auto DebuggerEngine::ListAddModule(DebugModule dbgModule) -> void {
+
+    //If not is a valid pe. just return and end our search because this module is invalid.
+    if (!this->IsPE(dbgModule.m_lpModuleBase)) return;
+
+    this->AddStringToListView(this->m_guiCfg.lstModules, QString(
+                                                             "BASE: 0x%1, MODULE NAME: %2"
+                                                             ).arg(
+                                                                 QString::number(dbgModule.m_lpModuleBase, 16),
+                                                                 dbgModule.m_qStName
+                                                            ));
+
+    this->m_debugModules.push_back(dbgModule);
+
 }
 
 auto DebuggerEngine::RemoveInterrupting(DebugBreakpoint* debug) -> void {

@@ -1,8 +1,9 @@
-QT       += core gui
+QT += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++17
+#HarukaMirai e suas dependencias usam C++ 20
+CONFIG += c++20
 
 SOURCES += \
     debuggerengine/debugbreakpoint.cpp \
@@ -52,6 +53,16 @@ LIBS += -L$$PWD/capstone/lib/x64 -lcapstone_dll_x64
 #|                                                                                                        |
 # ________________________________________________________________________________________________________
 
+#_________________________________________________________________________________________________________
+#|           KURUMI HELPER                                                                                |
+#_________________________________________________________________________________________________________
+INCLUDEPATH += $$PWD/kurumiparser/include
+# For build to ARM64 target change x64 to ARM64 and change capstone, change the kurumiparser/x64 for x64 or kurumiparser/ARM64 for ARM64
+LIBS += -L$$PWD/kurumiparser/x64 -lKurumiParser
+# ________________________________________________________________________________________________________
+#|                                                                                                        |
+# ________________________________________________________________________________________________________
+
 QMAKE_LFLAGS_WINDOWS = /NODEFAULTLIB:LIBCMT
 
 FORMS += \
@@ -62,3 +73,17 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    HarukaMiraiDbgResources.qrc
+
+
+#_________________________________________________________________________________________________________
+#|           Haruka ICON Configuration                                                                    |
+#_________________________________________________________________________________________________________
+RC_ICONS = "imgs/icone.ico"
+# ________________________________________________________________________________________________________
+#|                                                                                                        |
+# ________________________________________________________________________________________________________
+
+DISTFILES +=

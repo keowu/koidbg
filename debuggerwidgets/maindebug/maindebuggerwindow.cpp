@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 21/10/2024
+    Last Update: 27/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -44,6 +44,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->btnSendCommand, &QPushButton::clicked, this, &MainDebuggerWindow::OnCommandSendClicked);
     connect(ui->btnClear, &QPushButton::clicked, this, &MainDebuggerWindow::OnCommandClearClicked);
     connect(ui->lstRegisters, &QListView::clicked, this, &MainDebuggerWindow::onRegisterClicked);
+    connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainDebuggerWindow::onUserTabChangedClick);
 
     /*
      * Block ListView Edit Value
@@ -58,6 +59,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->tblHandles->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->tblDisasmVw->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->tblInterrupts->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->lstRegisteredVehs->setEditTriggers( QAbstractItemView::NoEditTriggers );
 
     /*
      * Memory View/Handles Selection policy, and Vertical Header configuration
@@ -100,22 +102,18 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
         return;
     }
 
-    if (!Kurumi::IsArm64(filePath.toStdString())) {
+    /*if (!Kurumi::IsArm64(filePath.toStdString())) {
 
         qDebug() << "MiIsArm64:: Return false! Not supported PE FILE.";
 
         return;
-    }
-
-    //Code snippet test for new feature for VEH Table
-    //qDebug() << "Kurumi::InitKurumiHKPDB: " << Kurumi::InitKurumiHKPDB("C:\\Users\\Keowu\\Downloads\\arm64\\ntdll.dll");
-
+    }*/
 
     DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
                                       ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
                                       ui->tblHandles, ui->tblInterrupts, ui->tblDisasmVw,
                                      { ui->memoryInspectorOne, ui->memoryInspectorTwo, ui->memoryInspectorThree },
-                                      ui->outCommandConsole
+                                      ui->outCommandConsole, ui->lstRegisteredVehs, ui->lstProcessCallbacks
     };
 
     this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
@@ -244,6 +242,38 @@ void MainDebuggerWindow::onStopDebug() {
     this->m_dbgEngine->~DebuggerEngine();
 
     delete this->m_dbgEngine;
+
+}
+
+auto MainDebuggerWindow::onUserTabChangedClick(int index) -> void {
+
+    if (index == 8) { //VEH/Generic-Handlers selected
+
+        if (this->m_dbgEngine->isKurumiLoaded()) {
+
+            //Cleaning the QListsViews
+            auto model = qobject_cast<QStringListModel*>(ui->lstRegisteredVehs->model());
+            auto model2 = qobject_cast<QStringListModel*>(ui->lstProcessCallbacks->model());
+
+            if (model) model->removeRows(0, model->rowCount());
+
+            if (model2) model2->removeRows(0, model2->rowCount());
+
+            //Detecting and extracting VEH Handlers
+            this->m_dbgEngine->extractLdrpVectorHandlerListInformation();
+
+            //Detect if Nirvana Instrumentation Callback is enabled on process
+            this->m_dbgEngine->extractNirvanaCallbackPresentOnDebugeeProcess();
+
+            //Detect and bring all information about Ntdll Callbacks from delegate tables
+            this->m_dbgEngine->extractNtDelegateTableCallbacks();
+
+        }
+
+        else
+            qDebug() << "Kurumi not loaded :(";
+
+    }
 
 }
 

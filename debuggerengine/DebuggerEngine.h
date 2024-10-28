@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 21/10/2024
+    Last Update: 27/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -27,6 +27,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include "debuggerwidgets/custom/disasmview/harukadisasmview.h"
 #include "debuggerwidgets/custom/qhexview/QHexView.hpp"
+#include <KurumiParser.hh>
 
 class DebuggerEngine {
 
@@ -47,6 +48,8 @@ public:
         HarukaDisasmView* tblDisasmVw;
         QHexView* qHexVw[3];
         QTextEdit* outCommandConsole;
+        QListView* lstRegisteredVehs;
+        QListView* lstProcessCallbacks;
 
     };
 
@@ -130,6 +133,18 @@ public:
     auto SetInterrupting(uintptr_t uipAddressBreak, bool isHardware) -> void;
     auto RemoveInterrupting(DebugBreakpoint* debug) -> void;
 
+    /*
+     * Kurumi Analysis Engine
+    */
+    auto isKurumiLoaded() -> bool {
+
+        return this->m_KurumiEngineStarted;
+    }
+
+    auto extractLdrpVectorHandlerListInformation() -> void;
+    auto extractNirvanaCallbackPresentOnDebugeeProcess() -> void;
+    auto extractNtDelegateTableCallbacks() -> void;
+
 private:
     /*
      *  Generic Variables
@@ -141,6 +156,11 @@ private:
     BOOL m_StopDbg{FALSE};
     HANDLE m_hDebugLoop;
     HANDLE m_hDebugCommandProcessingLoop;
+
+    /*
+     * Kurumi Analysis Engine
+     */
+    BOOL m_KurumiEngineStarted{FALSE};
 
     /*
      * Debugger Information data

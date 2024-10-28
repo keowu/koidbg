@@ -2,7 +2,7 @@
     File: utilswindowssycall.h
     Author: João Vitor(@Keowu)
     Created: 24/07/2024
-    Last Update: 21/10/2024
+    Last Update: 27/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -17,7 +17,7 @@
 #include <QMainWindow>
 #include <QtCore/QString>
 #include <QtCore/QDebug>
-
+#include <debuggerutils/defs.h>
 
 #define ThreadBasicInformation 0
 
@@ -565,21 +565,155 @@ inline auto GetRemoteHandleTableHandleInformation(const DWORD dwDebugProcPid, co
 }
 
 /*
-namespace Liefzin {
+ * Feature to extract VEH HANDLERS(Working for both: ARM64 and X64)
+ *
+ *
+ * The following content was readed in order to write this code:
+ *
+ *      https://dimitrifourny.github.io/2020/06/11/dumping-veh-win10.html
+ *      https://gist.github.com/olliencc/9f4bb9535c4f0ef0e54eac7912ab49c0
+ *      https://research.nccgroup.com/2022/03/01/detecting-anomalous-vectored-exception-handlers-on-windows/
+ *      https://bruteratel.com/research/2024/10/20/Exception-Junction/
+ *
+ * The Following Struct Definition was take in order to parse the fields on x64(found using this nice tool -> https://grep.app/search?q=_VECTORED_HANDLER_LIST):
+ *      https://github.com/mannyfred/SentinelBruh/blob/main/SentinelBruh/SentinelBruh/header.h#L31C1-L36C43
+*/
+typedef struct _VEH_HANDLER_ENTRY {
+    LIST_ENTRY					Entry;
+    PVOID						SyncRefs;
+    PVOID						Idk;
+    PVOID						VectoredHandler;
+} VEH_HANDLER_ENTRY, * PVEH_HANDLER_ENTRY;
 
-inline auto isArm64(QString filePath) -> bool {
-    #include <LIEF/LIEF.hpp>
-    std::unique_ptr<LIEF::PE::Binary> binary = LIEF::PE::Parser::parse(filePath.toStdString());
+typedef struct _VECTORED_HANDLER_LIST {
+    PVOID              MutexException;
+    VEH_HANDLER_ENTRY* FirstExceptionHandler;
+    VEH_HANDLER_ENTRY* LastExceptionHandler;
+    PVOID              MutexContinue;
+    VEH_HANDLER_ENTRY* FirstContinueHandler;
+    VEH_HANDLER_ENTRY* LastContinueHandler;
+} VECTORED_HANDLER_LIST, * PVECTORED_HANDLER_LIST;
 
-    return binary->header().machine() == LIEF::PE::Header::MACHINE_TYPES::ARM64;
-}
+    namespace VEHList {
 
-}*/
+        #define ProcessCookie 36
 
-//FEATURE PARA DUMPAR OS HANDLERS:
-//https://dimitrifourny.github.io/2020/06/11/dumping-veh-win10.html
-//https://gist.github.com/olliencc/9f4bb9535c4f0ef0e54eac7912ab49c0
-//https://research.nccgroup.com/2022/03/01/detecting-anomalous-vectored-exception-handlers-on-windows/
+        typedef NTSTATUS (NTAPI *tpdNtQueryInformationProcess)(
+            HANDLE ProcessHandle,
+            PROCESSINFOCLASS ProcessInformationClass,
+            PVOID ProcessInformation,
+            ULONG ProcessInformationLength,
+            PULONG ReturnLength OPTIONAL
+        );
+
+        //Stoolen from ntdll.dll
+        inline auto NtDllRtlDecodePointer(HANDLE hProcess) -> DWORD {
+
+            DWORD processCookie { 0 };
+
+            auto ZwNtQueryInformationProcess = reinterpret_cast<tpdNtQueryInformationProcess>(GetProcAddress(LoadLibraryA("ntdll.dll"), "NtQueryInformationProcess"));
+
+            auto status = ZwNtQueryInformationProcess(hProcess, (PROCESSINFOCLASS)ProcessCookie, &processCookie, 4u, 0LL);
+
+            if (status < 0) qDebug() << "Fail getting ProcessCookie :(";
+
+            return processCookie;
+        }
+
+        inline auto DecodePointer(HANDLE hProcess, uintptr_t handler) -> uintptr_t {
+
+            auto cookie = NtDllRtlDecodePointer(hProcess);
+
+            //qDebug() << "Cookie: " << QString::number(cookie, 16);
+
+            return __ROR8__(handler, 0x40 - (cookie & 0x3F)) ^ cookie;
+        }
+
+        inline auto GetVehList(HANDLE hProcess, uintptr_t pLdrpVectorHandlerList) -> std::vector<std::pair<uintptr_t, uintptr_t>> {
+
+            std::vector<std::pair<uintptr_t, uintptr_t>> vecVehHandlers;
+
+            //qDebug() << "VEHList::GetVehList::pLdrpVectorHandlerList: " << QString::number(pLdrpVectorHandlerList, 16);
+
+            VECTORED_HANDLER_LIST vehList;
+
+            ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(pLdrpVectorHandlerList), &vehList, sizeof(vehList), NULL);
+
+            //qDebug() << "VEHList::GetVehList::vehList first: " << QString::number(reinterpret_cast<uintptr_t>(vehList.FirstExceptionHandler), 16);
+            //qDebug() << "VEHList::GetVehList::vehList last: " << QString::number(reinterpret_cast<uintptr_t>(vehList.LastExceptionHandler), 16);
+
+            if (reinterpret_cast<uintptr_t>(vehList.FirstExceptionHandler) == pLdrpVectorHandlerList + sizeof(uintptr_t)) {
+
+                //qDebug() << "VEH List vazia!";
+
+                vecVehHandlers.push_back(std::make_pair(-1, -1));
+
+                return vecVehHandlers;
+            }
+
+            VEH_HANDLER_ENTRY entry;
+
+            ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(vehList.FirstExceptionHandler), &entry, sizeof(entry), NULL);
+
+            while (true) {
+
+                auto handler = reinterpret_cast<uintptr_t>(entry.VectoredHandler);
+
+                vecVehHandlers.push_back(std::make_pair(handler, VEHList::DecodePointer(hProcess, handler)));
+
+                if (reinterpret_cast<uintptr_t>(entry.Entry.Flink) == pLdrpVectorHandlerList + sizeof(uintptr_t)) break;
+
+                ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(entry.Entry.Flink), &entry, sizeof(entry), NULL);
+
+            }
+
+            return vecVehHandlers;
+        }
+
+    };
+
+    namespace NtAndProcessCallbacks {
+
+        typedef NTSTATUS (NTAPI* tpdNtQueryInformationThread)(
+            HANDLE          ThreadHandle,
+            THREADINFOCLASS ThreadInformationClass,
+            PVOID           ThreadInformation,
+            ULONG           ThreadInformationLength,
+            PULONG          ReturnLength
+            );
+
+        inline auto detectNirvanaCallback(HANDLE hProcess, HANDLE hThread, std::initializer_list<uintptr_t> offsets) -> bool {
+
+            auto ZwNtQueryInformationThread = reinterpret_cast<tpdNtQueryInformationThread>(GetProcAddress(LoadLibraryA("ntdll.dll"), "NtQueryInformationThread"));
+
+            THREAD_BASIC_INFORMATION tbi{ 0 };
+
+            ZwNtQueryInformationThread(hThread, (THREADINFOCLASS)(0), &tbi, sizeof(tbi), NULL);
+
+            //qDebug() << "TEB: " << QString::number(reinterpret_cast<uintptr_t>(tbi.TebBaseAddress), 16);
+
+            auto isDetected = 0;
+
+            for (auto& offset : offsets) {
+
+                auto addressToRead = reinterpret_cast<uintptr_t>(tbi.TebBaseAddress) + offset;
+
+                DWORD64 dw64Value{ 0 };
+
+                if (ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(addressToRead), &dw64Value, sizeof(dw64Value), NULL)) {
+                    //qDebug() << "Value at offset " << offset << ": " << QString::number(dw64Value, 16);
+                    isDetected = isDetected || dw64Value;
+                } /*else {
+                    qDebug() << "Failed to read memory at offset " << offset;
+                }*/
+            }
+
+            //qDebug() << "IsDetected: " << isDetected;
+
+            return isDetected;
+        }
+
+    };
 
 };
 

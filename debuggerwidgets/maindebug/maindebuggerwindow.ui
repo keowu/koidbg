@@ -364,6 +364,11 @@
         <height>20</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
       <property name="text">
        <string>All Modules for the debuggee process:</string>
       </property>
@@ -376,6 +381,11 @@
         <width>361</width>
         <height>20</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
       </property>
       <property name="text">
        <string>All past-loaded Modules for the debugee process:</string>
@@ -460,9 +470,9 @@
     </widget>
     <widget class="QWidget" name="tab_13">
      <attribute name="title">
-      <string>VEH/Generic-Handlers</string>
+      <string>VEH/Callbacks</string>
      </attribute>
-     <widget class="QListView" name="lsRegisteredVehs">
+     <widget class="QListView" name="lstRegisteredVehs">
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -490,6 +500,34 @@
        <string>Process registered VEHs:</string>
       </property>
      </widget>
+     <widget class="QLabel" name="label_12">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>330</y>
+        <width>181</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Process Callbacks:</string>
+      </property>
+     </widget>
+     <widget class="QListView" name="lstProcessCallbacks">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>360</y>
+        <width>931</width>
+        <height>281</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_6">
      <attribute name="title">
@@ -515,7 +553,17 @@
      <height>26</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <bold>true</bold>
+    </font>
+   </property>
    <widget class="QMenu" name="menuHarukaMirai_Debugger">
+    <property name="font">
+     <font>
+      <bold>false</bold>
+     </font>
+    </property>
     <property name="title">
      <string>HarukaMirai</string>
     </property>
@@ -558,6 +606,9 @@
   <action name="btnOpenExecutable">
    <property name="text">
     <string>Open Executable</string>
+   </property>
+   <property name="font">
+    <font/>
    </property>
   </action>
   <action name="btnAttachProcessContainer">

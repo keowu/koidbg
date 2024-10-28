@@ -28,6 +28,7 @@ HEADERS += \
     debuggerengine/debugmemory.h \
     debuggerengine/debugmodule.h \
     debuggerengine/debugthread.h \
+    debuggerutils/defs.h \
     debuggerwidgets/attachprocess/attachprocesswindow.h \
     debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.h \
     debuggerwidgets/custom/disasmview/harukadisasmview.h \

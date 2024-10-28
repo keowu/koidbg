@@ -2,7 +2,7 @@
     File: KurumiParser.cpp
     Author: João Vitor(@Keowu)
     Created: 21/10/2024
-    Last Update: 21/10/2024
+    Last Update: 27/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -40,7 +40,7 @@ auto KurumiPDB::CheckExistOrCreateHarukaMiraiPDBFolder() -> void {
 
 auto KurumiPDB::CheckExistPdbFileOnFolder(std::wstring fileNameWithoutExtension) -> bool {
 
-    auto miraiPath = std::filesystem::current_path().wstring() + L"\\HarukaPdbs\\" + fileNameWithoutExtension + L".hkpdb";
+    auto miraiPath = std::filesystem::current_path().wstring() + L"\\HarukaPdbs\\" + fileNameWithoutExtension + L".pdb";
 
     if (std::filesystem::exists(miraiPath) && std::filesystem::is_directory(miraiPath)) return true;
 
@@ -74,9 +74,159 @@ auto KurumiPDB::DownloadHarukaMiraiPdb() -> bool {
         L"https://msdl.microsoft.com/download/symbols/", fileNameWithoutExtension.c_str(),
         wGuid.c_str(), fileNameWithoutExtension.c_str());
 
-    auto savePath = (std::filesystem::current_path().wstring() + L"\\HarukaPdbs\\" + fileNameWithoutExtension + L".hkpdb");
+    auto savePath = (std::filesystem::current_path().wstring() + L"\\HarukaPdbs\\" + fileNameWithoutExtension + L".pdb");
+
+    this->m_savePath.assign(savePath.begin(), savePath.end());
 
     return URLDownloadToFileW(NULL, downloadPathBuffer, savePath.c_str(), NULL, NULL) == S_OK;
+}
+
+auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
+
+    auto hSym = GetCurrentProcess();
+
+    auto status = SymInitialize(hSym, this->m_filePath.c_str(), false);
+    if (!status) {
+
+        std::cerr << "Failed to initialize symbols.\n";
+
+        return -1;
+    }
+
+    status = SymSetSearchPath(hSym, (std::filesystem::current_path().string() + "\\HarukaPdbs\\").c_str());
+
+    if (!status) {
+
+        std::cerr << "Failed to SymSetSearchPath.\n";
+
+        return -1;
+    }
+
+    auto base = SymLoadModuleEx(hSym, nullptr, this->m_filePath.c_str(), nullptr, 0, 0, nullptr, 0);
+    if (base == 0) {
+
+        std::cerr << "Failed to load module.\n";
+        
+        SymCleanup(hSym);
+        
+        return -1;
+    }
+
+    constexpr auto k_size = sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(char);
+    unsigned char buf[k_size]{0};
+    auto* const info = reinterpret_cast<SYMBOL_INFO*>(buf);
+    info->SizeOfStruct = sizeof(SYMBOL_INFO);
+    info->MaxNameLen = MAX_SYM_NAME;
+
+    status = SymGetTypeFromName(hSym, base, fieldName.c_str(), info);
+    if (!status) {
+        
+        std::cerr << "Failed to get symbol information.\n";
+        
+        SymCleanup(hSym);
+    
+        return -1;
+    }
+
+    SymUnloadModule64(hSym, base);
+
+    SymCleanup(hSym);
+
+    return info->Address - base;
+}
+
+auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName) -> uintptr_t {
+
+    auto hSym = GetCurrentProcess();
+
+    if (!SymInitialize(hSym, m_filePath.c_str(), false)) {
+        std::cerr << "Failed to initialize symbols.\n";
+        return -1;
+    }
+
+    SymSetSearchPath(hSym, (std::filesystem::current_path().string() + "\\HarukaPdbs\\").c_str());
+
+    auto base = SymLoadModuleEx(hSym, nullptr, m_filePath.c_str(), nullptr, 0, 0, nullptr, 0);
+    if (base == 0) {
+
+        std::cerr << "Failed to load module.\n";
+
+        SymCleanup(hSym);
+        return -1;
+    }
+
+    SYMBOL_INFO_PACKAGE symInfoPackage;
+    symInfoPackage.si.SizeOfStruct = sizeof(SYMBOL_INFO);
+    symInfoPackage.si.MaxNameLen = MAX_SYM_NAME;
+
+    if (!SymGetTypeFromName(hSym, base, structName.c_str(), &symInfoPackage.si)) {
+
+        std::cerr << "Failed to locate struct: " << structName << "\n";
+
+        SymUnloadModule64(hSym, base);
+        SymCleanup(hSym);
+        return -1;
+    }
+
+    auto typeId = symInfoPackage.si.TypeIndex;
+    auto moduleBase = symInfoPackage.si.ModBase;
+
+    DWORD numChildren = 0;
+    if (!SymGetTypeInfo(hSym, moduleBase, typeId, TI_GET_CHILDRENCOUNT, &numChildren)) {
+
+        std::cerr << "Failed to get struct members.\n";
+
+        SymUnloadModule64(hSym, base);
+        SymCleanup(hSym);
+        return -1;
+    }
+
+    auto children = new TI_FINDCHILDREN_PARAMS[sizeof(TI_FINDCHILDREN_PARAMS) + numChildren * sizeof(ULONG)];
+    children->Count = numChildren;
+    children->Start = 0;
+
+    if (!SymGetTypeInfo(hSym, moduleBase, typeId, TI_FINDCHILDREN, children)) {
+
+        std::cerr << "Failed to retrieve child members.\n";
+
+        delete[] children;
+
+        SymUnloadModule64(hSym, base);
+
+        SymCleanup(hSym);
+
+        return -1;
+    }
+
+    auto offset = -1;
+    for (auto i = 0; i < numChildren; ++i) {
+
+        auto memberId = children->ChildId[i];
+
+        WCHAR* memberName = nullptr;
+        SymGetTypeInfo(hSym, moduleBase, memberId, TI_GET_SYMNAME, &memberName);
+
+        std::wstring wFieldName(fieldName.begin(), fieldName.end());
+
+        if (memberName && wFieldName == std::wstring(memberName)) {
+
+            DWORD64 memberOffset = 0;
+            SymGetTypeInfo(hSym, moduleBase, memberId, TI_GET_OFFSET, &memberOffset);
+
+            offset = static_cast<uintptr_t>(memberOffset);
+
+            LocalFree(memberName);
+            break;
+        }
+
+        if (memberName) LocalFree(memberName);
+    }
+
+    delete[] children;
+    SymUnloadModule64(hSym, base);
+    SymCleanup(hSym);
+
+    return offset;
 }
 
 namespace Kurumi {
@@ -100,11 +250,26 @@ namespace Kurumi {
         return binary->codeview_pdb()->guid() + std::to_string(binary->codeview_pdb()->age());
     }
 
-    auto _stdcall InitKurumiPDB(std::string filePath) -> bool {
+    auto _stdcall HasInternetConnection() -> bool {
+
+        return InternetCheckConnectionA("http://www.google.com", FLAG_ICC_FORCE_CONNECTION, 0);
+    }
+
+    auto _stdcall InitKurumiHKPDB(std::string filePath) -> bool {
 
         Kurumi::kurumiPdb = std::make_unique<KurumiPDB>(filePath);
 
         return kurumiPdb->DownloadHarukaMiraiPdb();
+    }
+
+    auto _stdcall FindFieldHKPDB(std::string fieldName) -> uintptr_t {
+
+        return Kurumi::kurumiPdb->FindPdbField(fieldName);
+    }
+
+    auto _stdcall FindStructFieldHKPDB(std::string structName, std::string fieldName) -> uintptr_t {
+
+        return Kurumi::kurumiPdb->FindPdbStructField(structName, fieldName);
     }
 
     auto _stdcall AttachKewDbgHarukaMiraiDevelopmentInterface() -> void {

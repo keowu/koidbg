@@ -2,7 +2,7 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 21/10/2024
+    Last Update: 27/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -701,6 +701,28 @@ auto DebuggerEngine::handleLoadDllDebugEvent(const LOAD_DLL_DEBUG_INFO& info) ->
         reinterpret_cast<uintptr_t>(info.lpBaseOfDll)
 
     );
+
+    /*
+     * Init Kurumi to explore Windows Kernel Bridge(ntdll) Internals and File Utils
+     */
+    if (!this->m_KurumiEngineStarted && Kurumi::HasInternetConnection()) {
+
+        if (dbgModule.m_qStName.contains("ntdll.dll"))
+            QThread::create([this, &dbgModule] {
+
+                this->m_guiCfg.statusbar->showMessage("[!] Kurumi Engine is analyzing all program and modules, and Windows Apis Internals, this will take a while to complete, make sure you have a internet connection.", 0);
+
+                this->m_KurumiEngineStarted = Kurumi::InitKurumiHKPDB(dbgModule.m_qStName.toStdString());
+
+                if (!this->m_KurumiEngineStarted)
+                    throw std::exception("OH, NO.. We want some symbols to explore windows internals and something goes really fucking bad.");
+
+                this->m_guiCfg.statusbar->showMessage("[OK] Kurumi Engine has ended the program and Winapi analysis, now you may be able to inspect more internals things.", 5);
+
+            })->start();
+
+        this->m_KurumiEngineStarted = true; //Ignore for now, because Kurumi is running
+    }
 
     this->ListAddModule(dbgModule);
 
@@ -2342,5 +2364,94 @@ auto DebuggerEngine::stepInto() -> void {
     }
 
     CloseHandle(hThread);
+
+}
+
+auto DebuggerEngine::extractLdrpVectorHandlerListInformation() -> void {
+
+    if (this->m_StopDbg) return;
+
+    auto ntDll = this->m_debugModules.at(1);
+
+    auto LdrpVectorHandlerListOffset = Kurumi::FindFieldHKPDB("LdrpVectorHandlerList");
+
+    if (LdrpVectorHandlerListOffset == 0xffffffffffffffff) return;
+
+    auto vecVEH = UtilsWindowsSyscall::VEHList::GetVehList(this->hInternalDebugHandle, ntDll.m_lpModuleBase + LdrpVectorHandlerListOffset);
+
+    if (vecVEH.front().first == -1 && vecVEH.front().second == -1) return;
+
+    for (auto& veh : vecVEH)
+
+        this->AddStringToListView(this->m_guiCfg.lstRegisteredVehs, QString("HANDLER_ENCRYPTED(0x%1) => 0x%2")
+                                                                      .arg(veh.first, 0, 16)
+                                                                      .arg(veh.second, 0, 16));
+
+}
+
+auto DebuggerEngine::extractNirvanaCallbackPresentOnDebugeeProcess() -> void {
+
+    //This code was a little based on: https://gist.github.com/alfarom256/981f1cffc3c30e6a89fcdb2bf12fca69
+    bool isDetected{ false };
+    for(auto& thread: this->m_debugThreads) {
+
+        auto hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, reinterpret_cast<uintptr_t>(thread.m_ThreadID));//this->m_debugThreads.front().m_ThreadID
+
+        if (hThread == INVALID_HANDLE_VALUE) return;
+
+        isDetected = UtilsWindowsSyscall::NtAndProcessCallbacks::detectNirvanaCallback(this->hInternalDebugHandle, hThread,  { Kurumi::FindStructFieldHKPDB("_TEB64", "InstrumentationCallbackSp"), Kurumi::FindStructFieldHKPDB("_TEB64", "InstrumentationCallbackPreviousPc"),
+                                                                                     Kurumi::FindStructFieldHKPDB("_TEB64", "InstrumentationCallbackPreviousSp"), Kurumi::FindStructFieldHKPDB("_TEB64", "Instrumentation") });
+
+        if (isDetected) {
+
+            this->AddStringToListView(this->m_guiCfg.lstProcessCallbacks, QString("TID 0x%1 is using a Windows Instrumentation Callback.")
+                                                                              .arg(QString::number(reinterpret_cast<uintptr_t>(thread.m_ThreadID), 16).toUpper()));
+
+        }
+
+        CloseHandle(hThread);
+    }
+
+}
+
+auto DebuggerEngine::extractNtDelegateTableCallbacks() -> void {
+
+    //This code was a little based on: https://modexp.wordpress.com/2024/02/13/delegated-nt-dll/
+    std::vector<QString> fieldNames = {
+        "LdrInitializeThunk",
+        "RtlUserThreadStart",
+        "RtlDispatchAPC",
+        "KiUserExceptionDispatcher",
+        "KiUserCallbackDispatcherHandler",
+        "KiUserApcDispatcher",
+        "KiUserCallbackDispatcher",
+        "KiRaiseUserExceptionDispatcher",
+        "LdrSystemDllInitBlock",
+        "LdrpChildNtdll",
+        "LdrParentInterlockedPopEntrySList",
+        "LdrParentRtlInitializeNtUserPfn",
+        "LdrParentRtlResetNtUserPfn",
+        "LdrParentRtlRetrieveNtUserPfn",
+        "RtlpWow64SuspendLocalProcess",
+        "LdrpInitialize",
+        "RtlAddVectoredExceptionHandler"
+    };
+
+    auto ntdllBase = this->m_debugModules.at(1).m_lpModuleBase;
+
+    for (const auto &fieldName : fieldNames) {
+        auto fieldValue = Kurumi::FindFieldHKPDB(fieldName.toStdString().c_str());
+
+        if (fieldValue != 0xffffffffffffffff) {
+
+            this->AddStringToListView(
+
+                this->m_guiCfg.lstProcessCallbacks,
+                QString("%1 => 0x%2").arg(fieldName, QString::number(ntdllBase + fieldValue, 16))
+
+            );
+
+        }
+    }
 
 }

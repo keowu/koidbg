@@ -2,7 +2,7 @@
     File: utilswindowssycall.h
     Author: João Vitor(@Keowu)
     Created: 24/07/2024
-    Last Update: 27/10/2024
+    Last Update: 03/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -564,6 +564,33 @@ inline auto GetRemoteHandleTableHandleInformation(const DWORD dwDebugProcPid, co
     );
 }
 
+inline auto getErrorMessage(DWORD errorCode) -> QString {
+
+    LPVOID msgBuffer;
+
+    FormatMessage(
+
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<LPWSTR>(&msgBuffer),
+        0,
+        NULL
+
+    );
+
+    QString errorMessage = QString::fromWCharArray(
+
+        reinterpret_cast<wchar_t*>(msgBuffer)
+
+    );
+
+    LocalFree(msgBuffer);
+
+    return errorMessage;
+}
+
 /*
  * Feature to extract VEH HANDLERS(Working for both: ARM64 and X64)
  *
@@ -711,6 +738,543 @@ typedef struct _VECTORED_HANDLER_LIST {
             //qDebug() << "IsDetected: " << isDetected;
 
             return isDetected;
+        }
+
+    };
+
+    enum _FUNCTION_TABLE_TYPE
+    {
+        RF_SORTED = 0,
+        RF_UNSORTED = 1,
+        RF_CALLBACK = 2,
+        RF_KERNEL_DYNAMIC = 3
+    };
+
+
+    //0x18 bytes (sizeof)
+    struct _RTL_BALANCED_NODE
+    {
+        union
+        {
+            struct _RTL_BALANCED_NODE* Children[2];                             //0x0
+            struct
+            {
+                struct _RTL_BALANCED_NODE* Left;                                //0x0
+                struct _RTL_BALANCED_NODE* Right;                               //0x8
+            };
+        };
+        union
+        {
+            struct
+            {
+                UCHAR Red:1;                                                    //0x10
+                UCHAR Balance:2;                                                //0x10
+            };
+            ULONGLONG ParentValue;                                              //0x10
+        };
+    };
+
+    //0x88 bytes (sizeof)
+    typedef struct _DYNAMIC_FUNCTION_TABLE
+    {
+        struct _LIST_ENTRY ListEntry;                                           //0x0
+        struct _IMAGE_RUNTIME_FUNCTION_ENTRY* FunctionTable;                    //0x10
+        union _LARGE_INTEGER TimeStamp;                                         //0x18
+        ULONGLONG MinimumAddress;                                               //0x20
+        ULONGLONG MaximumAddress;                                               //0x28
+        ULONGLONG BaseAddress;                                                  //0x30
+        struct _IMAGE_RUNTIME_FUNCTION_ENTRY* (*Callback)(ULONGLONG arg1, VOID* arg2); //0x38
+        VOID* Context;                                                          //0x40
+        WCHAR* OutOfProcessCallbackDll;                                         //0x48
+        enum _FUNCTION_TABLE_TYPE Type;                                         //0x50
+        ULONG EntryCount;                                                       //0x54
+        struct _RTL_BALANCED_NODE TreeNodeMin;                                  //0x58
+        struct _RTL_BALANCED_NODE TreeNodeMax;                                  //0x70
+    } DYNAMIC_FUNCTION_TABLE, *PDYNAMIC_FUNCTION_TABLE;
+
+
+    namespace DynamicFunctionTableList {
+
+        /*
+         * Base on https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtlinstallfunctiontablecallback
+         * and
+         * (2. Dynamic Function Table List) of https://modexp.wordpress.com/2020/08/06/windows-data-structures-and-callbacks-part-1/#ftl
+         */
+        inline auto GetDynFunctTableList(HANDLE hProcess, uintptr_t RtlpDynamicFunctionTable) -> std::vector<uintptr_t>{
+
+            std::vector<uintptr_t> vecDynamicFunct;
+
+            DYNAMIC_FUNCTION_TABLE dynTable;
+
+            ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(RtlpDynamicFunctionTable), &dynTable, sizeof(dynTable), NULL);
+
+            if (reinterpret_cast<uintptr_t>(dynTable.ListEntry.Flink) == RtlpDynamicFunctionTable) {
+
+                qDebug() << "RtlpDynamicFunctionTable Vazia";
+
+                vecDynamicFunct.push_back(-1);
+
+                return vecDynamicFunct;
+            }
+
+            ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(dynTable.ListEntry.Flink), &dynTable, sizeof(dynTable), NULL);
+
+            while (true) {
+
+                /*qDebug() << "Callback: " << QString::number(reinterpret_cast<uintptr_t>(dynTable.Callback), 16);
+                qDebug() << "FunctionTable: " << QString::number(reinterpret_cast<uintptr_t>(dynTable.FunctionTable), 16);
+                qDebug() << "BaseAddress: " << QString::number(dynTable.BaseAddress, 16);
+                qDebug() << "Next: " << dynTable.ListEntry.Flink;*/
+
+                vecDynamicFunct.push_back(reinterpret_cast<uintptr_t>(dynTable.Callback));
+
+                if (reinterpret_cast<uintptr_t>(dynTable.ListEntry.Flink) == RtlpDynamicFunctionTable) break;
+
+                ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(dynTable.ListEntry.Flink), &dynTable, sizeof(dynTable), NULL);
+
+            }
+
+            return vecDynamicFunct;
+        }
+
+    };
+
+    namespace DLLNotificationsList {
+
+        typedef struct _UNICODE_STR {
+            USHORT Length;
+            USHORT MaximumLength;
+            PWSTR pBuffer;
+        } UNICODE_STR, * PUNICODE_STR;
+
+        typedef struct _LDR_DLL_LOADED_NOTIFICATION_DATA {
+            ULONG           Flags;
+            PUNICODE_STR FullDllName;
+            PUNICODE_STR BaseDllName;
+            PVOID           DllBase;
+            ULONG           SizeOfImage;
+        } LDR_DLL_LOADED_NOTIFICATION_DATA, * PLDR_DLL_LOADED_NOTIFICATION_DATA;
+
+        typedef struct _LDR_DLL_UNLOADED_NOTIFICATION_DATA {
+            ULONG           Flags;
+            PUNICODE_STR FullDllName;
+            PUNICODE_STR BaseDllName;
+            PVOID           DllBase;
+            ULONG           SizeOfImage;
+        } LDR_DLL_UNLOADED_NOTIFICATION_DATA, * PLDR_DLL_UNLOADED_NOTIFICATION_DATA;
+
+        typedef union _LDR_DLL_NOTIFICATION_DATA {
+            LDR_DLL_LOADED_NOTIFICATION_DATA   Loaded;
+            LDR_DLL_UNLOADED_NOTIFICATION_DATA Unloaded;
+        } LDR_DLL_NOTIFICATION_DATA, * PLDR_DLL_NOTIFICATION_DATA;
+
+        typedef VOID(CALLBACK* PLDR_DLL_NOTIFICATION_FUNCTION)(
+            ULONG                       NotificationReason,
+            PLDR_DLL_NOTIFICATION_DATA  NotificationData,
+            PVOID                       Context);
+
+
+        typedef struct _LDR_DLL_NOTIFICATION_ENTRY {
+            LIST_ENTRY                     List;
+            PLDR_DLL_NOTIFICATION_FUNCTION Callback;
+            PVOID                          Context;
+        } LDR_DLL_NOTIFICATION_ENTRY, * PLDR_DLL_NOTIFICATION_ENTRY;
+
+        /*
+        *  Base on https://learn.microsoft.com/en-us/windows/win32/devnotes/ldrregisterdllnotification, https://github.com/m417z/LdrDllNotificationHook
+        *  and
+        *  (4. DLL Notifications) of https://modexp.wordpress.com/2020/08/06/windows-data-structures-and-callbacks-part-1/#ftl
+        */
+        inline auto GetDllNotificationList(HANDLE hProcess, uintptr_t ldrpDllNotificationList) -> std::vector<uintptr_t> {
+
+            std::vector<uintptr_t> vecDllNotificationListFunc;
+
+            LDR_DLL_NOTIFICATION_ENTRY dllNotificationList;
+
+            ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(ldrpDllNotificationList), &dllNotificationList, sizeof(dllNotificationList), NULL);
+
+            if (reinterpret_cast<uintptr_t>(dllNotificationList.List.Flink) == ldrpDllNotificationList) {
+
+                qDebug() << "LdrpDllNotificationList Vazia";
+
+                vecDllNotificationListFunc.push_back(-1);
+
+                return vecDllNotificationListFunc;
+            }
+
+            ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(dllNotificationList.List.Flink), &dllNotificationList, sizeof(dllNotificationList), NULL);
+
+            while (true) {
+
+                /*qDebug() << "Callback: " <<  QString::number(reinterpret_cast<uintptr_t>(dllNotificationList.Callback), 16);
+                qDebug() << "Flink: " <<  QString::number(reinterpret_cast<uintptr_t>(dllNotificationList.List.Flink), 16);*/
+
+                vecDllNotificationListFunc.push_back(reinterpret_cast<uintptr_t>(dllNotificationList.Callback));
+
+                if (reinterpret_cast<uintptr_t>(dllNotificationList.List.Flink) == ldrpDllNotificationList) break;
+
+                ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(dllNotificationList.List.Flink), &dllNotificationList, sizeof(dllNotificationList), NULL);
+
+            }
+
+            return vecDllNotificationListFunc;
+        }
+
+    };
+
+    namespace SecMemListHead {
+
+        typedef BOOLEAN (CALLBACK *PSECURE_MEMORY_CACHE_CALLBACK)(PVOID, SIZE_T);
+
+        typedef struct _RTL_SEC_MEM_ENTRY {
+            LIST_ENTRY                    List;
+            ULONG                         Revision;
+            ULONG                         Reserved;
+            PSECURE_MEMORY_CACHE_CALLBACK Callback;
+        } RTL_SEC_MEM_ENTRY, *PRTL_SEC_MEM_ENTRY;
+
+        /*
+         *  Based on https://learn.microsoft.com/en-us/windows/win32/api/winnt/nc-winnt-psecure_memory_cache_callback,https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-addsecurememorycachecallback
+         *  and
+         *  (5. Secure Memory) of https://modexp.wordpress.com/2020/08/06/windows-data-structures-and-callbacks-part-1/#ftl
+         */
+        inline auto GetSecMemListHead(HANDLE hProcess, uintptr_t rtlpSecMemListHead) -> std::vector<uintptr_t> {
+
+            std::vector<uintptr_t> vecSecMemListFunc;
+
+            RTL_SEC_MEM_ENTRY memEntry;
+
+            ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(rtlpSecMemListHead), &memEntry, sizeof(memEntry), NULL);
+
+            if (reinterpret_cast<uintptr_t>(memEntry.List.Flink) == rtlpSecMemListHead) {
+
+                qDebug() << "LdrpDllNotificationList Vazia";
+
+                vecSecMemListFunc.push_back(-1);
+
+                return vecSecMemListFunc;
+            }
+
+            ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(memEntry.List.Flink), &memEntry, sizeof(memEntry), NULL);
+
+            while (true) {
+
+                /*qDebug() << "Callback: " <<  QString::number(reinterpret_cast<uintptr_t>(memEntry.Callback), 16);
+                qDebug() << "Flink: " <<  QString::number(reinterpret_cast<uintptr_t>(memEntry.List.Flink), 16);*/
+
+                vecSecMemListFunc.push_back(reinterpret_cast<uintptr_t>(memEntry.Callback));
+
+                if (reinterpret_cast<uintptr_t>(memEntry.List.Flink) == rtlpSecMemListHead) break;
+
+                ReadProcessMemory(hProcess, reinterpret_cast<PVOID>(memEntry.List.Flink), &memEntry, sizeof(memEntry), NULL);
+
+            }
+
+            return vecSecMemListFunc;
+        }
+
+    };
+
+    namespace KernelKCT {
+
+        typedef struct _KERNELCALLBACKTABLE_T {
+            ULONG_PTR __fnCOPYDATA;
+            ULONG_PTR __fnCOPYGLOBALDATA;
+            ULONG_PTR __fnDWORD;
+            ULONG_PTR __fnNCDESTROY;
+            ULONG_PTR __fnDWORDOPTINLPMSG;
+            ULONG_PTR __fnINOUTDRAG;
+            ULONG_PTR __fnGETTEXTLENGTHS;
+            ULONG_PTR __fnINCNTOUTSTRING;
+            ULONG_PTR __fnPOUTLPINT;
+            ULONG_PTR __fnINLPCOMPAREITEMSTRUCT;
+            ULONG_PTR __fnINLPCREATESTRUCT;
+            ULONG_PTR __fnINLPDELETEITEMSTRUCT;
+            ULONG_PTR __fnINLPDRAWITEMSTRUCT;
+            ULONG_PTR __fnPOPTINLPUINT;
+            ULONG_PTR __fnPOPTINLPUINT2;
+            ULONG_PTR __fnINLPMDICREATESTRUCT;
+            ULONG_PTR __fnINOUTLPMEASUREITEMSTRUCT;
+            ULONG_PTR __fnINLPWINDOWPOS;
+            ULONG_PTR __fnINOUTLPPOINT5;
+            ULONG_PTR __fnINOUTLPSCROLLINFO;
+            ULONG_PTR __fnINOUTLPRECT;
+            ULONG_PTR __fnINOUTNCCALCSIZE;
+            ULONG_PTR __fnINOUTLPPOINT5_;
+            ULONG_PTR __fnINPAINTCLIPBRD;
+            ULONG_PTR __fnINSIZECLIPBRD;
+            ULONG_PTR __fnINDESTROYCLIPBRD;
+            ULONG_PTR __fnINSTRING;
+            ULONG_PTR __fnINSTRINGNULL;
+            ULONG_PTR __fnINDEVICECHANGE;
+            ULONG_PTR __fnPOWERBROADCAST;
+            ULONG_PTR __fnINLPUAHDRAWMENU;
+            ULONG_PTR __fnOPTOUTLPDWORDOPTOUTLPDWORD;
+            ULONG_PTR __fnOPTOUTLPDWORDOPTOUTLPDWORD_;
+            ULONG_PTR __fnOUTDWORDINDWORD;
+            ULONG_PTR __fnOUTLPRECT;
+            ULONG_PTR __fnOUTSTRING;
+            ULONG_PTR __fnPOPTINLPUINT3;
+            ULONG_PTR __fnPOUTLPINT2;
+            ULONG_PTR __fnSENTDDEMSG;
+            ULONG_PTR __fnINOUTSTYLECHANGE;
+            ULONG_PTR __fnHkINDWORD;
+            ULONG_PTR __fnHkINLPCBTACTIVATESTRUCT;
+            ULONG_PTR __fnHkINLPCBTCREATESTRUCT;
+            ULONG_PTR __fnHkINLPDEBUGHOOKSTRUCT;
+            ULONG_PTR __fnHkINLPMOUSEHOOKSTRUCTEX;
+            ULONG_PTR __fnHkINLPKBDLLHOOKSTRUCT;
+            ULONG_PTR __fnHkINLPMSLLHOOKSTRUCT;
+            ULONG_PTR __fnHkINLPMSG;
+            ULONG_PTR __fnHkINLPRECT;
+            ULONG_PTR __fnHkOPTINLPEVENTMSG;
+            ULONG_PTR __xxxClientCallDelegateThread;
+            ULONG_PTR __ClientCallDummyCallback;
+            ULONG_PTR __fnKEYBOARDCORRECTIONCALLOUT;
+            ULONG_PTR __fnOUTLPCOMBOBOXINFO;
+            ULONG_PTR __fnINLPCOMPAREITEMSTRUCT2;
+            ULONG_PTR __xxxClientCallDevCallbackCapture;
+            ULONG_PTR __xxxClientCallDitThread;
+            ULONG_PTR __xxxClientEnableMMCSS;
+            ULONG_PTR __xxxClientUpdateDpi;
+            ULONG_PTR __xxxClientExpandStringW;
+            ULONG_PTR __ClientCopyDDEIn1;
+            ULONG_PTR __ClientCopyDDEIn2;
+            ULONG_PTR __ClientCopyDDEOut1;
+            ULONG_PTR __ClientCopyDDEOut2;
+            ULONG_PTR __ClientCopyImage;
+            ULONG_PTR __ClientEventCallback;
+            ULONG_PTR __ClientFindMnemChar;
+            ULONG_PTR __ClientFreeDDEHandle;
+            ULONG_PTR __ClientFreeLibrary;
+            ULONG_PTR __ClientGetCharsetInfo;
+            ULONG_PTR __ClientGetDDEFlags;
+            ULONG_PTR __ClientGetDDEHookData;
+            ULONG_PTR __ClientGetListboxString;
+            ULONG_PTR __ClientGetMessageMPH;
+            ULONG_PTR __ClientLoadImage;
+            ULONG_PTR __ClientLoadLibrary;
+            ULONG_PTR __ClientLoadMenu;
+            ULONG_PTR __ClientLoadLocalT1Fonts;
+            ULONG_PTR __ClientPSMTextOut;
+            ULONG_PTR __ClientLpkDrawTextEx;
+            ULONG_PTR __ClientExtTextOutW;
+            ULONG_PTR __ClientGetTextExtentPointW;
+            ULONG_PTR __ClientCharToWchar;
+            ULONG_PTR __ClientAddFontResourceW;
+            ULONG_PTR __ClientThreadSetup;
+            ULONG_PTR __ClientDeliverUserApc;
+            ULONG_PTR __ClientNoMemoryPopup;
+            ULONG_PTR __ClientMonitorEnumProc;
+            ULONG_PTR __ClientCallWinEventProc;
+            ULONG_PTR __ClientWaitMessageExMPH;
+            ULONG_PTR __ClientWOWGetProcModule;
+            ULONG_PTR __ClientWOWTask16SchedNotify;
+            ULONG_PTR __ClientImmLoadLayout;
+            ULONG_PTR __ClientImmProcessKey;
+            ULONG_PTR __fnIMECONTROL;
+            ULONG_PTR __fnINWPARAMDBCSCHAR;
+            ULONG_PTR __fnGETTEXTLENGTHS2;
+            ULONG_PTR __fnINLPKDRAWSWITCHWND;
+            ULONG_PTR __ClientLoadStringW;
+            ULONG_PTR __ClientLoadOLE;
+            ULONG_PTR __ClientRegisterDragDrop;
+            ULONG_PTR __ClientRevokeDragDrop;
+            ULONG_PTR __fnINOUTMENUGETOBJECT;
+            ULONG_PTR __ClientPrinterThunk;
+            ULONG_PTR __fnOUTLPCOMBOBOXINFO2;
+            ULONG_PTR __fnOUTLPSCROLLBARINFO;
+            ULONG_PTR __fnINLPUAHDRAWMENU2;
+            ULONG_PTR __fnINLPUAHDRAWMENUITEM;
+            ULONG_PTR __fnINLPUAHDRAWMENU3;
+            ULONG_PTR __fnINOUTLPUAHMEASUREMENUITEM;
+            ULONG_PTR __fnINLPUAHDRAWMENU4;
+            ULONG_PTR __fnOUTLPTITLEBARINFOEX;
+            ULONG_PTR __fnTOUCH;
+            ULONG_PTR __fnGESTURE;
+            ULONG_PTR __fnPOPTINLPUINT4;
+            ULONG_PTR __fnPOPTINLPUINT5;
+            ULONG_PTR __xxxClientCallDefaultInputHandler;
+            ULONG_PTR __fnEMPTY;
+            ULONG_PTR __ClientRimDevCallback;
+            ULONG_PTR __xxxClientCallMinTouchHitTestingCallback;
+            ULONG_PTR __ClientCallLocalMouseHooks;
+            ULONG_PTR __xxxClientBroadcastThemeChange;
+            ULONG_PTR __xxxClientCallDevCallbackSimple;
+            ULONG_PTR __xxxClientAllocWindowClassExtraBytes;
+            ULONG_PTR __xxxClientFreeWindowClassExtraBytes;
+            ULONG_PTR __fnGETWINDOWDATA;
+            ULONG_PTR __fnINOUTSTYLECHANGE2;
+            ULONG_PTR __fnHkINLPMOUSEHOOKSTRUCTEX2;
+        } KERNELCALLBACKTABLE;
+
+        typedef NTSTATUS (NTAPI *tpdNtQueryInformationProcess)(
+            HANDLE ProcessHandle,
+            PROCESSINFOCLASS ProcessInformationClass,
+            PVOID ProcessInformation,
+            ULONG ProcessInformationLength,
+            PULONG ReturnLength OPTIONAL
+        );
+
+        inline auto GetKctTable(HANDLE hProc, uintptr_t pebAndKernelCallbackTable) -> std::vector<std::pair<uintptr_t, QString>> {
+
+            std::vector<std::pair<uintptr_t, QString>> vecAddress;
+
+            KERNELCALLBACKTABLE kct;
+
+            PROCESS_BASIC_INFORMATION pbi;
+
+            auto ZwNtQueryInformationProcess = reinterpret_cast<tpdNtQueryInformationProcess>(GetProcAddress(LoadLibraryA("ntdll.dll"), "NtQueryInformationProcess"));
+
+            auto status = ZwNtQueryInformationProcess(hProc, ProcessBasicInformation, &pbi, sizeof(pbi), 0LL);
+
+            if (status < 0) qDebug() << "Fail getting PEB :(";
+
+            ReadProcessMemory(hProc, reinterpret_cast<PVOID>(reinterpret_cast<uintptr_t>(pbi.PebBaseAddress) + pebAndKernelCallbackTable), &kct, sizeof(kct), NULL);
+
+            const struct {
+                const char* name;
+                ULONG_PTR value;
+            } fields[] = {
+                {"COPYDATA", kct.__fnCOPYDATA},
+                {"COPYGLOBALDATA", kct.__fnCOPYGLOBALDATA},
+                {"KCTDWORD", kct.__fnDWORD},
+                {"NCDESTROY", kct.__fnNCDESTROY},
+                {"DWORDOPTINLPMSG", kct.__fnDWORDOPTINLPMSG},
+                {"INOUTDRAG", kct.__fnINOUTDRAG},
+                {"GETTEXTLENGTHS", kct.__fnGETTEXTLENGTHS},
+                {"INCNTOUTSTRING", kct.__fnINCNTOUTSTRING},
+                {"POUTLPINT", kct.__fnPOUTLPINT},
+                {"INLPCOMPAREITEMSTRUCT", kct.__fnINLPCOMPAREITEMSTRUCT},
+                {"INLPCREATESTRUCT", kct.__fnINLPCREATESTRUCT},
+                {"INLPDELETEITEMSTRUCT", kct.__fnINLPDELETEITEMSTRUCT},
+                {"INLPDRAWITEMSTRUCT", kct.__fnINLPDRAWITEMSTRUCT},
+                {"POPTINLPUINT", kct.__fnPOPTINLPUINT},
+                {"POPTINLPUINT2", kct.__fnPOPTINLPUINT2},
+                {"INLPMDICREATESTRUCT", kct.__fnINLPMDICREATESTRUCT},
+                {"INOUTLPMEASUREITEMSTRUCT", kct.__fnINOUTLPMEASUREITEMSTRUCT},
+                {"INLPWINDOWPOS", kct.__fnINLPWINDOWPOS},
+                {"INOUTLPPOINT5", kct.__fnINOUTLPPOINT5},
+                {"INOUTLPSCROLLINFO", kct.__fnINOUTLPSCROLLINFO},
+                {"INOUTLPRECT", kct.__fnINOUTLPRECT},
+                {"INOUTNCCALCSIZE", kct.__fnINOUTNCCALCSIZE},
+                {"INOUTLPPOINT5_", kct.__fnINOUTLPPOINT5_},
+                {"INPAINTCLIPBRD", kct.__fnINPAINTCLIPBRD},
+                {"INSIZECLIPBRD", kct.__fnINSIZECLIPBRD},
+                {"INDESTROYCLIPBRD", kct.__fnINDESTROYCLIPBRD},
+                {"INSTRING", kct.__fnINSTRING},
+                {"INSTRINGNULL", kct.__fnINSTRINGNULL},
+                {"INDEVICECHANGE", kct.__fnINDEVICECHANGE},
+                {"POWERBROADCAST", kct.__fnPOWERBROADCAST},
+                {"INLPUAHDRAWMENU", kct.__fnINLPUAHDRAWMENU},
+                {"OPTOUTLPDWORDOPTOUTLPDWORD", kct.__fnOPTOUTLPDWORDOPTOUTLPDWORD},
+                {"OPTOUTLPDWORDOPTOUTLPDWORD_", kct.__fnOPTOUTLPDWORDOPTOUTLPDWORD_},
+                {"OUTDWORDINDWORD", kct.__fnOUTDWORDINDWORD},
+                {"OUTLPRECT", kct.__fnOUTLPRECT},
+                {"OUTSTRING", kct.__fnOUTSTRING},
+                {"POPTINLPUINT3", kct.__fnPOPTINLPUINT3},
+                {"POUTLPINT2", kct.__fnPOUTLPINT2},
+                {"SENTDDEMSG", kct.__fnSENTDDEMSG},
+                {"INOUTSTYLECHANGE", kct.__fnINOUTSTYLECHANGE},
+                {"HkINDWORD", kct.__fnHkINDWORD},
+                {"HkINLPCBTACTIVATESTRUCT", kct.__fnHkINLPCBTACTIVATESTRUCT},
+                {"HkINLPCBTCREATESTRUCT", kct.__fnHkINLPCBTCREATESTRUCT},
+                {"HkINLPDEBUGHOOKSTRUCT", kct.__fnHkINLPDEBUGHOOKSTRUCT},
+                {"HkINLPMOUSEHOOKSTRUCTEX", kct.__fnHkINLPMOUSEHOOKSTRUCTEX},
+                {"HkINLPKBDLLHOOKSTRUCT", kct.__fnHkINLPKBDLLHOOKSTRUCT},
+                {"HkINLPMSLLHOOKSTRUCT", kct.__fnHkINLPMSLLHOOKSTRUCT},
+                {"HkINLPMSG", kct.__fnHkINLPMSG},
+                {"HkINLPRECT", kct.__fnHkINLPRECT},
+                {"HkOPTINLPEVENTMSG", kct.__fnHkOPTINLPEVENTMSG},
+                {"ClientCallDelegateThread", kct.__xxxClientCallDelegateThread},
+                {"ClientCallDummyCallback", kct.__ClientCallDummyCallback},
+                {"KEYBOARDCORRECTIONCALLOUT", kct.__fnKEYBOARDCORRECTIONCALLOUT},
+                {"OUTLPCOMBOBOXINFO", kct.__fnOUTLPCOMBOBOXINFO},
+                {"INLPCOMPAREITEMSTRUCT2", kct.__fnINLPCOMPAREITEMSTRUCT2},
+                {"ClientCallDevCallbackCapture", kct.__xxxClientCallDevCallbackCapture},
+                {"ClientCallDitThread", kct.__xxxClientCallDitThread},
+                {"ClientEnableMMCSS", kct.__xxxClientEnableMMCSS},
+                {"ClientUpdateDpi", kct.__xxxClientUpdateDpi},
+                {"ClientExpandStringW", kct.__xxxClientExpandStringW},
+                {"ClientCopyDDEIn1", kct.__ClientCopyDDEIn1},
+                {"ClientCopyDDEIn2", kct.__ClientCopyDDEIn2},
+                {"ClientCopyDDEOut1", kct.__ClientCopyDDEOut1},
+                {"ClientCopyDDEOut2", kct.__ClientCopyDDEOut2},
+                {"ClientCopyImage", kct.__ClientCopyImage},
+                {"ClientEventCallback", kct.__ClientEventCallback},
+                {"ClientFindMnemChar", kct.__ClientFindMnemChar},
+                {"ClientFreeDDEHandle", kct.__ClientFreeDDEHandle},
+                {"ClientFreeLibrary", kct.__ClientFreeLibrary},
+                {"ClientGetCharsetInfo", kct.__ClientGetCharsetInfo},
+                {"ClientGetDDEFlags", kct.__ClientGetDDEFlags},
+                {"ClientGetDDEHookData", kct.__ClientGetDDEHookData},
+                {"ClientGetListboxString", kct.__ClientGetListboxString},
+                {"ClientGetMessageMPH", kct.__ClientGetMessageMPH},
+                {"ClientLoadImage", kct.__ClientLoadImage},
+                {"ClientLoadLibrary", kct.__ClientLoadLibrary},
+                {"ClientLoadMenu", kct.__ClientLoadMenu},
+                {"ClientLoadLocalT1Fonts", kct.__ClientLoadLocalT1Fonts},
+                {"ClientPSMTextOut", kct.__ClientPSMTextOut},
+                {"ClientLpkDrawTextEx", kct.__ClientLpkDrawTextEx},
+                {"ClientExtTextOutW", kct.__ClientExtTextOutW},
+                {"ClientGetTextExtentPointW", kct.__ClientGetTextExtentPointW},
+                {"ClientCharToWchar", kct.__ClientCharToWchar},
+                {"ClientAddFontResourceW", kct.__ClientAddFontResourceW},
+                {"ClientThreadSetup", kct.__ClientThreadSetup},
+                {"ClientDeliverUserApc", kct.__ClientDeliverUserApc},
+                {"ClientNoMemoryPopup", kct.__ClientNoMemoryPopup},
+                {"ClientMonitorEnumProc", kct.__ClientMonitorEnumProc},
+                {"ClientCallWinEventProc", kct.__ClientCallWinEventProc},
+                {"ClientWaitMessageExMPH", kct.__ClientWaitMessageExMPH},
+                {"ClientWOWGetProcModule", kct.__ClientWOWGetProcModule},
+                {"ClientWOWTask16SchedNotify", kct.__ClientWOWTask16SchedNotify},
+                {"ClientImmLoadLayout", kct.__ClientImmLoadLayout},
+                {"ClientImmProcessKey", kct.__ClientImmProcessKey},
+                {"IMECONTROL", kct.__fnIMECONTROL},
+                {"INWPARAMDBCSCHAR", kct.__fnINWPARAMDBCSCHAR},
+                {"GETTEXTLENGTHS2", kct.__fnGETTEXTLENGTHS2},
+                {"INLPKDRAWSWITCHWND", kct.__fnINLPKDRAWSWITCHWND},
+                {"ClientLoadStringW", kct.__ClientLoadStringW},
+                {"ClientLoadOLE", kct.__ClientLoadOLE},
+                {"ClientRegisterDragDrop", kct.__ClientRegisterDragDrop},
+                {"ClientRevokeDragDrop", kct.__ClientRevokeDragDrop},
+                {"fnINOUTMENUGETOBJECT", kct.__fnINOUTMENUGETOBJECT},
+                {"ClientPrinterThunk", kct.__ClientPrinterThunk},
+                {"OUTLPCOMBOBOXINFO2", kct.__fnOUTLPCOMBOBOXINFO2},
+                {"OUTLPSCROLLBARINFO", kct.__fnOUTLPSCROLLBARINFO},
+                {"INLPUAHDRAWMENU2", kct.__fnINLPUAHDRAWMENU2},
+                {"INLPUAHDRAWMENUITEM", kct.__fnINLPUAHDRAWMENUITEM},
+                {"INLPUAHDRAWMENU3", kct.__fnINLPUAHDRAWMENU3},
+                {"INOUTLPUAHMEASUREMENUITEM", kct.__fnINOUTLPUAHMEASUREMENUITEM},
+                {"INLPUAHDRAWMENU4", kct.__fnINLPUAHDRAWMENU4},
+                {"OUTLPTITLEBARINFOEX", kct.__fnOUTLPTITLEBARINFOEX},
+                {"TOUCH", kct.__fnTOUCH},
+                {"GESTURE", kct.__fnGESTURE},
+                {"POPTINLPUINT4", kct.__fnPOPTINLPUINT4},
+                {"POPTINLPUINT5", kct.__fnPOPTINLPUINT5},
+                {"ClientCallDefaultInputHandler", kct.__xxxClientCallDefaultInputHandler},
+                {"EMPTY", kct.__fnEMPTY},
+                {"ClientRimDevCallback", kct.__ClientRimDevCallback},
+                {"ClientCallMinTouchHitTestingCallback", kct.__xxxClientCallMinTouchHitTestingCallback},
+                {"ClientCallLocalMouseHooks", kct.__ClientCallLocalMouseHooks},
+                {"ClientBroadcastThemeChange", kct.__xxxClientBroadcastThemeChange},
+                {"ClientCallDevCallbackSimple", kct.__xxxClientCallDevCallbackSimple},
+                {"ClientAllocWindowClassExtraBytes", kct.__xxxClientAllocWindowClassExtraBytes},
+                {"ClientFreeWindowClassExtraBytes", kct.__xxxClientFreeWindowClassExtraBytes},
+                {"GETWINDOWDATA", kct.__fnGETWINDOWDATA},
+                {"INOUTSTYLECHANGE2", kct.__fnINOUTSTYLECHANGE2},
+                {"HkINLPMOUSEHOOKSTRUCTEX2", kct.__fnHkINLPMOUSEHOOKSTRUCTEX2}
+            };
+
+            for (const auto& field : fields) {
+
+                if (field.value == 0) continue;
+
+                vecAddress.push_back(std::make_pair(field.value, field.name));
+
+            }
+
+            return vecAddress;
         }
 
     };

@@ -2,7 +2,7 @@
     File: KurumiParser.cpp
     Author: João Vitor(@Keowu)
     Created: 21/10/2024
-    Last Update: 27/10/2024
+    Last Update: 03/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -229,6 +229,43 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
     return offset;
 }
 
+auto CALLBACK KurumiPdbFast::EnumSymbolsCallback(PSYMBOL_INFO pSymInfo, ULONG SymbolSize, PVOID UserContext) -> BOOL {
+
+    auto* vecSymbols = reinterpret_cast<std::vector<std::pair<std::string, uintptr_t>>*>(UserContext);
+
+    if (pSymInfo->Tag == SymTagFunction) vecSymbols->emplace_back(std::make_pair( pSymInfo->Name, pSymInfo->Address - 0x10000000));
+
+    return TRUE;
+}
+
+auto KurumiPdbFast::ParsePdbFunctionsAndGetListInternal(std::string pdbPath) -> std::vector<std::pair<std::string, uintptr_t>> {
+
+    std::vector<std::pair<std::string, uintptr_t>> vecSymbols;
+
+    auto hSym = GetCurrentProcess();
+
+    if (!SymInitialize(hSym, nullptr, false)) return vecSymbols;
+
+    auto pdbDirectory = pdbPath.substr(0, pdbPath.find_last_of("\\/"));
+
+    SymSetSearchPath(hSym, pdbDirectory.c_str());
+
+    auto base = SymLoadModule64(hSym, nullptr, pdbPath.c_str(), nullptr, 0x10000000, 0);
+
+    if (base == 0) {
+
+        SymCleanup(hSym);
+
+        return vecSymbols;
+    }
+
+    if (!SymEnumSymbols(hSym, base, nullptr, KurumiPdbFast::EnumSymbolsCallback, &vecSymbols)) return vecSymbols;
+
+    SymCleanup(hSym);
+
+    return vecSymbols;
+}
+
 namespace Kurumi {
 
     auto _stdcall IsArm64(std::string filePath) -> bool {
@@ -276,6 +313,11 @@ namespace Kurumi {
 
         std::printf("Lolis DBG Interface are desactivated on compile time to avoid bad use of engine.\n");
 
+    }
+
+    auto _stdcall ParsePdbFunctionsAndSymbolsByPath(std::string pdbPath) -> std::vector<std::pair<std::string, uintptr_t>> {
+
+        return KurumiPdbFast::ParsePdbFunctionsAndGetListInternal(pdbPath);
     }
 
 }

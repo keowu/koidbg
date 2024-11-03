@@ -31,7 +31,7 @@
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>Debugger</string>
+      <string>Debugger View</string>
      </attribute>
      <widget class="QListView" name="lstRegisters">
       <property name="geometry">
@@ -57,6 +57,11 @@
         <height>20</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
       <property name="text">
        <string>Registers:</string>
       </property>
@@ -69,6 +74,11 @@
         <width>63</width>
         <height>20</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
       </property>
       <property name="text">
        <string>Stack:</string>
@@ -470,15 +480,15 @@
     </widget>
     <widget class="QWidget" name="tab_13">
      <attribute name="title">
-      <string>VEH/Callbacks</string>
+      <string>Process Container Callbacks</string>
      </attribute>
      <widget class="QListView" name="lstRegisteredVehs">
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>40</y>
+        <y>490</y>
         <width>931</width>
-        <height>281</height>
+        <height>151</height>
        </rect>
       </property>
      </widget>
@@ -486,7 +496,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>10</y>
+        <y>460</y>
         <width>181</width>
         <height>20</height>
        </rect>
@@ -504,7 +514,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>330</y>
+        <y>10</y>
         <width>181</width>
         <height>20</height>
        </rect>
@@ -522,9 +532,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>360</y>
+        <y>40</y>
         <width>931</width>
-        <height>281</height>
+        <height>411</height>
        </rect>
       </property>
      </widget>
@@ -533,6 +543,55 @@
      <attribute name="title">
       <string>Pdb Inpector</string>
      </attribute>
+     <widget class="QPushButton" name="btnOpenPdb">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>151</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Load PDB</string>
+      </property>
+     </widget>
+     <widget class="QTableView" name="tblPdbFunctions">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>70</y>
+        <width>931</width>
+        <height>561</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lblPdbInspectorMetrics">
+      <property name="geometry">
+       <rect>
+        <x>730</x>
+        <y>20</y>
+        <width>211</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btnClearPdb">
+      <property name="geometry">
+       <rect>
+        <x>180</x>
+        <y>10</y>
+        <width>151</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Clear Info</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_12">
      <property name="enabled">

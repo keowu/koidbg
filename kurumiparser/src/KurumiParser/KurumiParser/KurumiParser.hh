@@ -2,7 +2,7 @@
     File: KurumiParser.hh
     Author: João Vitor(@Keowu)
     Created: 21/10/2024
-    Last Update: 27/10/2024
+    Last Update: 03/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -22,6 +22,8 @@
 
 #pragma comment(lib, "WinINet.lib")
 
+#define SymTagFunction 5
+
 class KurumiPDB {
 
 private:
@@ -39,6 +41,12 @@ public:
 
 };
 
+namespace KurumiPdbFast {
+
+    auto CALLBACK EnumSymbolsCallback(PSYMBOL_INFO pSymInfo, ULONG SymbolSize, PVOID UserContext) -> BOOL;
+    auto ParsePdbFunctionsAndGetListInternal(std::string pdbPath) -> std::vector<std::pair<std::string, uintptr_t>>;
+
+};
 
 namespace Kurumi {
     //Private
@@ -52,6 +60,8 @@ namespace Kurumi {
     __declspec(dllexport) auto _stdcall FindStructFieldHKPDB(std::string structName, std::string fieldName) -> uintptr_t;
     __declspec(dllexport) auto _stdcall IsArm64(std::string filePath) -> bool;
     __declspec(dllexport) auto _stdcall AttachKewDbgHarukaMiraiDevelopmentInterface() -> void;
+    __declspec(dllexport) auto _stdcall ParsePdbFunctionsAndSymbolsByPath(std::string pdbPath) ->std::vector<std::pair<std::string, uintptr_t>>;
+
 }
 
 #endif

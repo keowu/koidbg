@@ -2,7 +2,7 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 27/10/2024
+    Last Update: 03/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -566,14 +566,15 @@ auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTIO
         //Reupdate new context
         this->UpdateAllDebuggerContext(dwTid);
 
-    }
+    } else {
 
-    //TODO: OTHER/GENERIC EXCEPTIONS
-    /*else {
+        //Generic/Uknown Exceptions:
+        this->m_guiCfg.statusbar->showMessage(
 
+            "Uknown exception: " + UtilsWindowsSyscall::getErrorMessage(info.ExceptionRecord.ExceptionCode) + QString::number(info.ExceptionRecord.ExceptionCode, 16),
+            1000
 
-        this->m_debugRule = DebuggerEngine::BKPT_CONTINUE;
-        this->m_debugCommand = DebuggerEngine::RUN;
+        );
 
         //Delete all old context
         this->DeleteAllDebuggerContext();
@@ -581,7 +582,7 @@ auto DebuggerEngine::handleExceptionDebugEvent(const DWORD dwTid, const EXCEPTIO
         //Reupdate new context
         this->UpdateAllDebuggerContext(dwTid);
 
-    }*/
+    }
 
 
 }
@@ -964,6 +965,42 @@ auto DebuggerEngine::DeleteAllDebuggerContextEngineExit() -> void {
 
         interruptsViewModel = new QStandardItemModel();
         this->m_guiCfg.tblInterrupts->setModel(interruptsViewModel);
+
+    }
+
+    //__________________________________________________________________________________________________________
+    // Deleting Old PDB View
+    //__________________________________________________________________________________________________________
+    QStandardItemModel* pdbViewModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.tblPdbFunctions->model());
+
+    if (pdbViewModel) pdbViewModel->clear();
+    else {
+
+        pdbViewModel = new QStandardItemModel();
+        this->m_guiCfg.tblInterrupts->setModel(pdbViewModel);
+
+    }
+
+    //__________________________________________________________________________________________________________
+    // Deleting Process Container Callbacks
+    //__________________________________________________________________________________________________________
+    QStandardItemModel* processCallbackModel = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstProcessCallbacks->model());
+
+    if (processCallbackModel) processCallbackModel->clear();
+    else {
+
+        processCallbackModel = new QStandardItemModel();
+        this->m_guiCfg.lstProcessCallbacks->setModel(processCallbackModel);
+
+    }
+
+    QStandardItemModel* registeredVehs = qobject_cast<QStandardItemModel*>(this->m_guiCfg.lstRegisteredVehs->model());
+
+    if (registeredVehs) registeredVehs->clear();
+    else {
+
+        registeredVehs = new QStandardItemModel();
+        this->m_guiCfg.lstRegisteredVehs->setModel(registeredVehs);
 
     }
 
@@ -2453,5 +2490,111 @@ auto DebuggerEngine::extractNtDelegateTableCallbacks() -> void {
 
         }
     }
+
+    auto vecDynamicTable = UtilsWindowsSyscall::DynamicFunctionTableList::GetDynFunctTableList(
+
+        this->hInternalDebugHandle,
+        ntdllBase + Kurumi::FindFieldHKPDB("RtlpDynamicFunctionTable")
+
+    );
+
+    if (!vecDynamicTable.empty() && vecDynamicTable.front() != -1) {
+
+        QStringList dynTableEntries;
+
+        for (const auto& entry : vecDynamicTable) dynTableEntries << QString::number(entry, 16).prepend("0x");
+
+        QString qstrDynTable = QString("RtlpDynamicFunctionTable => [ %1 ]").arg(dynTableEntries.join(" "));
+
+        this->AddStringToListView(this->m_guiCfg.lstProcessCallbacks, qstrDynTable);
+
+    }
+
+    auto vecDllNotificationList = UtilsWindowsSyscall::DLLNotificationsList::GetDllNotificationList(
+
+        this->hInternalDebugHandle, ntdllBase + Kurumi::FindFieldHKPDB("LdrpDllNotificationList")
+
+    );
+
+    if (!vecDllNotificationList.empty() && vecDllNotificationList.front() != -1) {
+
+        QStringList dllNotifyEntries;
+
+        for (const auto& entry : vecDllNotificationList) dllNotifyEntries << QString::number(entry, 16).prepend("0x");
+
+        QString qstrNotifyEntries = QString("LdrpDllNotificationList => [ %1 ]").arg(dllNotifyEntries.join(" "));
+
+        this->AddStringToListView(this->m_guiCfg.lstProcessCallbacks, qstrNotifyEntries);
+
+    }
+
+    auto vecSecMemListHead = UtilsWindowsSyscall::SecMemListHead::GetSecMemListHead(
+
+        this->hInternalDebugHandle,
+        ntdllBase + Kurumi::FindFieldHKPDB("RtlpSecMemListHead")
+
+    );
+
+    if (!vecSecMemListHead.empty() && vecSecMemListHead.front() != -1) {
+
+        QStringList secMemListEntries;
+
+        for (const auto& entry : vecSecMemListHead) secMemListEntries << QString::number(entry, 16).prepend("0x");
+
+        QString qstrMemListEntries = QString("RtlpSecMemListHead => [ %1 ]").arg(secMemListEntries.join(" "));
+
+        this->AddStringToListView(this->m_guiCfg.lstProcessCallbacks, qstrMemListEntries);
+
+    }
+
+    auto vecKernelKctValued = UtilsWindowsSyscall::KernelKCT::GetKctTable(
+
+        this->hInternalDebugHandle,
+        Kurumi::FindStructFieldHKPDB("_PEB", "KernelCallbackTable")
+
+    );
+
+    if (!vecKernelKctValued.empty()) {
+
+        QStringList kernelKctEntries;
+
+        for (const auto& entry : vecKernelKctValued) kernelKctEntries << (entry.second + ": ").append("0x" + QString::number(entry.first, 16)).append(" ");
+
+        QString qstrKernelKctEntries = QString("KernelCallbackTable => [ %1 ]").arg(kernelKctEntries.join(" "));
+
+        this->AddStringToListView(this->m_guiCfg.lstProcessCallbacks, qstrKernelKctEntries);
+
+    }
+
+}
+
+auto DebuggerEngine::extractPdbFileFunctions(QString pdbPath) -> void {
+
+    auto imgBase = this->m_debugModules.front().m_lpModuleBase;
+
+    auto vecFunctions = Kurumi::ParsePdbFunctionsAndSymbolsByPath(pdbPath.toStdString());
+
+    auto model = new QStandardItemModel(static_cast<int>(vecFunctions.size()), 2, this->m_guiCfg.tblPdbFunctions);
+
+    model->setHorizontalHeaderLabels(QStringList() << "Function" << "Address");
+
+    auto i = 0;
+    for (auto& entry : vecFunctions) {
+
+        model->setItem(i, 0, new QStandardItem(QString::fromStdString(entry.first)));
+        model->setItem(i, 1, new QStandardItem(QString("0x%1").arg(imgBase + entry.second, 0, 16)));
+
+        i++;
+    }
+
+    this->m_guiCfg.tblPdbFunctions->setModel(model);
+
+    /*
+     *  Auto resize contents
+     */
+    this->m_guiCfg.tblPdbFunctions->resizeColumnsToContents();
+
+
+    this->m_guiCfg.lblPdbInspectorMetrics->setText("Imported " + QString::number(vecFunctions.size()) + " functions to our HarukaDB.");
 
 }

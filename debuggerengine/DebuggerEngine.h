@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 27/10/2024
+    Last Update: 03/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -18,6 +18,7 @@
 #include <QMainWindow>
 #include <QStatusBar>
 #include <windows.h>
+#include <QLabel>
 #include <QTimer>
 #include <QTableView>
 #include <QHeaderView>
@@ -50,6 +51,8 @@ public:
         QTextEdit* outCommandConsole;
         QListView* lstRegisteredVehs;
         QListView* lstProcessCallbacks;
+        QTableView* tblPdbFunctions;
+        QLabel* lblPdbInspectorMetrics;
 
     };
 
@@ -106,6 +109,14 @@ public:
     auto stepOut() -> void;
 
     /*
+     * Get debugging section active
+     */
+    auto isDebugSessionActive() -> bool {
+
+        return m_StopDbg;
+    }
+
+    /*
      * External getters and setters utils
      */
     auto getBreakpointByIndex(int index) -> DebugBreakpoint* {
@@ -144,6 +155,7 @@ public:
     auto extractLdrpVectorHandlerListInformation() -> void;
     auto extractNirvanaCallbackPresentOnDebugeeProcess() -> void;
     auto extractNtDelegateTableCallbacks() -> void;
+    auto extractPdbFileFunctions(QString pdbPath) -> void;
 
 private:
     /*

@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 27/10/2024
+    Last Update: 03/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -45,6 +45,8 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->btnClear, &QPushButton::clicked, this, &MainDebuggerWindow::OnCommandClearClicked);
     connect(ui->lstRegisters, &QListView::clicked, this, &MainDebuggerWindow::onRegisterClicked);
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainDebuggerWindow::onUserTabChangedClick);
+    connect(ui->btnOpenPdb, &QPushButton::clicked, this, &MainDebuggerWindow::OnLoadPdbClicked);
+    connect(ui->btnClearPdb, &QPushButton::clicked, this, &MainDebuggerWindow::OnClearPdbClicked);
 
     /*
      * Block ListView Edit Value
@@ -60,6 +62,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->tblDisasmVw->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->tblInterrupts->setEditTriggers( QAbstractItemView::NoEditTriggers );
     ui->lstRegisteredVehs->setEditTriggers( QAbstractItemView::NoEditTriggers );
+    ui->tblPdbFunctions->setEditTriggers( QAbstractItemView::NoEditTriggers );
 
     /*
      * Memory View/Handles Selection policy, and Vertical Header configuration
@@ -72,6 +75,8 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     ui->tblDisasmVw->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tblInterrupts->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->tblInterrupts->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tblPdbFunctions->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->tblPdbFunctions->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ////////////////////////////////////////////////////////////
     /// We need to see if this shit will fuck with the code again
@@ -93,7 +98,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
 
 void MainDebuggerWindow::onOpenExecutableClicked() {
 
-    auto filePath = QFileDialog::getOpenFileName(this, "Open File", "", "Executable Files (*.exe);;All Files (*)");
+    auto filePath = QFileDialog::getOpenFileName(this, "Open a Executable File", "", "Executable Files (*.exe);;All Files (*)");
 
     if (filePath.isEmpty()) {
 
@@ -109,11 +114,15 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
         return;
     }*/
 
-    DebuggerEngine::GuiConfig guiCfg{ ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
+    DebuggerEngine::GuiConfig guiCfg{
+
+                                     ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
                                       ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
                                       ui->tblHandles, ui->tblInterrupts, ui->tblDisasmVw,
                                      { ui->memoryInspectorOne, ui->memoryInspectorTwo, ui->memoryInspectorThree },
-                                      ui->outCommandConsole, ui->lstRegisteredVehs, ui->lstProcessCallbacks
+                                     ui->outCommandConsole, ui->lstRegisteredVehs, ui->lstProcessCallbacks,
+                                     ui->tblPdbFunctions, ui->lblPdbInspectorMetrics
+
     };
 
     this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
@@ -249,7 +258,7 @@ auto MainDebuggerWindow::onUserTabChangedClick(int index) -> void {
 
     if (index == 8) { //VEH/Generic-Handlers selected
 
-        if (this->m_dbgEngine->isKurumiLoaded()) {
+        if (this->m_dbgEngine->isKurumiLoaded() && !this->m_dbgEngine->isDebugSessionActive()) {
 
             //Cleaning the QListsViews
             auto model = qobject_cast<QStringListModel*>(ui->lstRegisteredVehs->model());
@@ -313,6 +322,46 @@ auto MainDebuggerWindow::onRegisterClicked(const QModelIndex &index) -> void {
     this->ui->outCommandConsole->append(model->data(index).toString());
 
     //TODO MAKE BEATIFUL THE FLAGS FOR ARM64 AND X86_64 AND ALSO DISPLAY
+
+}
+
+auto MainDebuggerWindow::OnLoadPdbClicked() -> void {
+
+    if (!this->m_dbgEngine || this->m_dbgEngine->isDebugSessionActive()) {
+
+        qDebug() << "No Debug session started !";
+
+        return;
+    }
+
+    auto filePath = QFileDialog::getOpenFileName(this, "Open a PDB File for the current debuggee program", "", "Program database (*.pdb);;All Files (*)");
+
+    if (filePath.isEmpty()) {
+
+        this->ui->statusbar->showMessage("[Error] Please select a valid PDB file.");
+
+        return;
+    }
+
+    qDebug() << "MainDebuggerWindow::OnLoadPdbClicked";
+
+    this->m_dbgEngine->extractPdbFileFunctions(filePath);
+
+}
+
+auto MainDebuggerWindow::OnClearPdbClicked() -> void {
+
+    QStandardItemModel* pdbViewModel = qobject_cast<QStandardItemModel*>(ui->tblPdbFunctions->model());
+
+    if (pdbViewModel) pdbViewModel->clear();
+    else {
+
+        pdbViewModel = new QStandardItemModel();
+        ui->tblPdbFunctions->setModel(pdbViewModel);
+
+    }
+
+    ui->lblPdbInspectorMetrics->clear();
 
 }
 

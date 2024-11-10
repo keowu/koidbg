@@ -2,7 +2,7 @@
     File: DebuggerEngine.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 03/11/2024
+    Last Update: 10/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -53,6 +53,8 @@ public:
         QListView* lstProcessCallbacks;
         QTableView* tblPdbFunctions;
         QLabel* lblPdbInspectorMetrics;
+        QTextEdit* txtDecompiler;
+        QTabWidget* qTabHaruka;
 
     };
 
@@ -148,14 +150,17 @@ public:
      * Kurumi Analysis Engine
     */
     auto isKurumiLoaded() -> bool {
-
         return this->m_KurumiEngineStarted;
     }
-
     auto extractLdrpVectorHandlerListInformation() -> void;
     auto extractNirvanaCallbackPresentOnDebugeeProcess() -> void;
     auto extractNtDelegateTableCallbacks() -> void;
     auto extractPdbFileFunctions(QString pdbPath) -> void;
+
+    /*
+     * Update Disassembler View for the user
+    */
+    auto UpdateDisassemblerView(const uintptr_t uipAddress) -> void;
 
 private:
     /*
@@ -242,7 +247,6 @@ private:
      */
     auto UpdateDisassemblerView(const DWORD dwTID) -> void;
     auto UpdateActualIPContext(uintptr_t uipAddressToIP) -> void;
-    auto UpdateDisassemblerView(const uintptr_t uipAddress) -> void;
 
 };
 

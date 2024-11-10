@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.h
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 03/11/2024
+    Last Update: 10/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -51,9 +51,12 @@ private slots:
     auto OnClearPdbClicked() -> void;
     auto onRegisterClicked(const QModelIndex &index) -> void;
     auto onUserTabChangedClick(int index) -> void;
+    auto onPdbFunctionClicked(const QModelIndex &index) -> void;
+    void onThemeColorModeClicked();
 
 private:
     Ui::MainDebuggerWindow *ui;
     DebuggerEngine *m_dbgEngine;
+    bool m_isDarkModeEnabled{ FALSE };
 };
 #endif // MAINDEBUGGERWINDOW_H

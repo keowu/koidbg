@@ -15,6 +15,7 @@ SOURCES += \
     debuggerengine/debuggerengine.cpp \
     debuggerwidgets/custom/disasmview/harukadisasmview.cpp \
     debuggerwidgets/custom/qhexview/QHexView.cpp \
+    decompiler/decompiler.cpp \
     disassemblerengine/disassemblerengine.cpp \
     main.cpp \
     debuggerwidgets/maindebug/maindebuggerwindow.cpp \
@@ -33,11 +34,13 @@ HEADERS += \
     debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.h \
     debuggerwidgets/custom/disasmview/harukadisasmview.h \
     debuggerwidgets/custom/qhexview/QHexView.hpp \
+    decompiler/decompiler.hh \
     disassemblerengine/disassemblerengine.h \
     disassemblerengine/disassemblerutils.h \
     debuggerwidgets/maindebug/maindebuggerwindow.h \
     debuggerutils/utilswindowssyscall.h \
     debuggercommands/lexer.hh
+    #test_code/TestesUnicornIntegration.hh
 
 LIBS += -lwtsapi32
 LIBS += -lAdvapi32
@@ -59,8 +62,18 @@ LIBS += -L$$PWD/capstone/lib/x64 -lcapstone_dll_x64
 #|           KURUMI HELPER                                                                                |
 #_________________________________________________________________________________________________________
 INCLUDEPATH += $$PWD/kurumiparser/include
-# For build to ARM64 target change x64 to ARM64 and change capstone, change the kurumiparser/x64 for x64 or kurumiparser/ARM64 for ARM64
+# For build to ARM64 target change x64 to ARM64 and change kurumiparser, change the kurumiparser/x64 for x64 or kurumiparser/ARM64 for ARM64
 LIBS += -L$$PWD/kurumiparser/x64 -lKurumiParser
+# ________________________________________________________________________________________________________
+#|                                                                                                        |
+# ________________________________________________________________________________________________________
+
+#_________________________________________________________________________________________________________
+#|           Unicorn(Only for x64, No support for AARM64)                                                 |
+#_________________________________________________________________________________________________________
+#INCLUDEPATH += $$PWD/unicorn/include
+# For build to ARM64 target change x64 to ARM64 and change unicorn lunicorn_x64 to unicorn_AA64
+#LIBS += -L$$PWD/unicorn/lib/x64 -lunicorn_x64
 # ________________________________________________________________________________________________________
 #|                                                                                                        |
 # ________________________________________________________________________________________________________

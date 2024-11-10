@@ -2,7 +2,7 @@
     File: DebuggerEngine.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 03/11/2024
+    Last Update: 10/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -154,7 +154,7 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
     QHexView* hexViews[3] = { thiz->m_guiCfg.qHexVw[0], thiz->m_guiCfg.qHexVw[1], thiz->m_guiCfg.qHexVw[2] };
     BreakPointCallback callbackBreakpoint = std::bind(&DebuggerEngine::SetInterrupting, thiz, std::placeholders::_1, std::placeholders::_2);
     SetIPCallback callbackIP = std::bind(&DebuggerEngine::UpdateActualIPContext, thiz, std::placeholders::_1);
-    thiz->m_guiCfg.tblDisasmVw->configureDisasm(hexViews, thiz->m_processInfo.second.hProcess, callbackBreakpoint, callbackIP);
+    thiz->m_guiCfg.tblDisasmVw->configureDisasm(hexViews, thiz->m_guiCfg.txtDecompiler, thiz->m_guiCfg.qTabHaruka, thiz->m_processInfo.second.hProcess, callbackBreakpoint, callbackIP);
 
     /*
     * Main debugger loop
@@ -232,9 +232,8 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
             ContinueDebugEvent(dbgEvent.dwProcessId, dbgEvent.dwThreadId, DBG_EXCEPTION_NOT_HANDLED);
         } else {
             DWORD error = GetLastError();
-            if (error != ERROR_SEM_TIMEOUT) {
-                qDebug() << "WaitForDebugEvent failed with error: " << error;
-            }
+            if (error != ERROR_SEM_TIMEOUT) qDebug() << "WaitForDebugEvent failed with error: " << error;
+
         }
     }
 
@@ -522,7 +521,6 @@ ignore_command:
 
             if (token.type == Token::TokenType::END) thiz->m_guiCfg.outCommandConsole->append("----------------------------------------\n");
 
-
         }
 
         thiz->m_commandProcessingQueue.popBack();
@@ -604,7 +602,6 @@ auto DebuggerEngine::handleCreateThreadDebugEvent(const CREATE_THREAD_DEBUG_INFO
         GetThreadPriority(info.hThread)
 
     );
-
 
     this->AddStringToListView(this->m_guiCfg.lstThreads, QString(
                                                             "TID: 0x%1, BASE: 0x%2, START: 0x%3, TEB: 0x%4, PRIORITY: %5"
@@ -980,6 +977,8 @@ auto DebuggerEngine::DeleteAllDebuggerContextEngineExit() -> void {
         this->m_guiCfg.tblInterrupts->setModel(pdbViewModel);
 
     }
+
+    this->m_guiCfg.lblPdbInspectorMetrics->clear();
 
     //__________________________________________________________________________________________________________
     // Deleting Process Container Callbacks

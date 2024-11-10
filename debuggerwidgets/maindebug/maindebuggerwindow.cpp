@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cpp
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 03/11/2024
+    Last Update: 10/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -47,6 +47,8 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainDebuggerWindow::onUserTabChangedClick);
     connect(ui->btnOpenPdb, &QPushButton::clicked, this, &MainDebuggerWindow::OnLoadPdbClicked);
     connect(ui->btnClearPdb, &QPushButton::clicked, this, &MainDebuggerWindow::OnClearPdbClicked);
+    connect(ui->tblPdbFunctions, &QTableView::clicked, this, &MainDebuggerWindow::onPdbFunctionClicked);
+    connect(ui->btnColorMode, &QAction::triggered, this, &MainDebuggerWindow::onThemeColorModeClicked);
 
     /*
      * Block ListView Edit Value
@@ -121,8 +123,8 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
                                       ui->tblHandles, ui->tblInterrupts, ui->tblDisasmVw,
                                      { ui->memoryInspectorOne, ui->memoryInspectorTwo, ui->memoryInspectorThree },
                                      ui->outCommandConsole, ui->lstRegisteredVehs, ui->lstProcessCallbacks,
-                                     ui->tblPdbFunctions, ui->lblPdbInspectorMetrics
-
+                                     ui->tblPdbFunctions, ui->lblPdbInspectorMetrics, ui->txtDecompiler,
+                                     ui->tabWidget
     };
 
     this->m_dbgEngine = new DebuggerEngine(filePath.toStdWString(), guiCfg);
@@ -325,6 +327,36 @@ auto MainDebuggerWindow::onRegisterClicked(const QModelIndex &index) -> void {
 
 }
 
+void MainDebuggerWindow::onPdbFunctionClicked(const QModelIndex &index) {
+
+    if (!index.isValid()) return;
+
+    auto model = this->ui->tblPdbFunctions->model();
+
+    QModelIndex address = model->index(index.row(), 1);
+    QVariant value = model->data(address);
+
+    qDebug() << "MainDebuggerWindow::onPdbFunctionClicked value:" << value.toString();
+
+    bool ok{ FALSE };
+
+    QString valueString = value.toString();
+
+    if (valueString.startsWith("0x", Qt::CaseInsensitive)) {
+
+        auto result = QStringView(valueString).mid(2).toULongLong(&ok, 16);
+
+        if (ok) {
+
+            this->m_dbgEngine->UpdateDisassemblerView(result);
+            this->ui->tabWidget->setCurrentIndex(0);
+
+        }
+
+    }
+
+}
+
 auto MainDebuggerWindow::OnLoadPdbClicked() -> void {
 
     if (!this->m_dbgEngine || this->m_dbgEngine->isDebugSessionActive()) {
@@ -363,6 +395,33 @@ auto MainDebuggerWindow::OnClearPdbClicked() -> void {
 
     ui->lblPdbInspectorMetrics->clear();
 
+}
+
+void MainDebuggerWindow::onThemeColorModeClicked() {
+
+    qDebug() << "MainDebuggerWindow::onThemeColorModeClicked";
+
+    if (!this->m_isDarkModeEnabled) {
+
+        QFile f("themes\\dark.css");
+
+        f.open(QFile::ReadOnly | QFile::Text);
+        QTextStream ts(&f);
+        setStyleSheet(ts.readAll());
+
+        this->ui->btnColorMode->setText("Light Mode");
+
+        this->m_isDarkModeEnabled = { TRUE };
+
+    } else {
+
+        this->ui->btnColorMode->setText("Dark Mode");
+
+        setStyleSheet(NULL);
+
+        this->m_isDarkModeEnabled = { FALSE };
+
+    }
 }
 
 auto MainDebuggerWindow::OnCommandClearClicked() -> void {

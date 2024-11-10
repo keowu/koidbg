@@ -2,7 +2,7 @@
     File: harukadisasmview.h
     Author: João Vitor(@Keowu)
     Created: 24/08/2024
-    Last Update: 08/09/2024
+    Last Update: 10/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -12,8 +12,10 @@
 #include <QTableView>
 #include <QContextMenuEvent>
 #include <QMenu>
+#include <QScrollBar>
 #include <Windows.h>
 #include "debuggerwidgets/custom/qhexview/QHexView.hpp"
+#include "decompiler/decompiler.hh"
 
 using BreakPointCallback = std::function<void(uintptr_t, bool)>;
 using SetIPCallback = std::function<void(uintptr_t)>;
@@ -23,16 +25,19 @@ class HarukaDisasmView : public QTableView {
 
 public:
     explicit HarukaDisasmView(QWidget *parent = nullptr);
-    auto configureDisasm(QHexView* qHexVw[3], HANDLE hProcessInternal, BreakPointCallback setBreakPointCallback, SetIPCallback setIPCallback) -> void;
+    auto configureDisasm(QHexView* qHexVw[3], QTextEdit* txtDecompiler, QTabWidget* qTabHaruka, HANDLE hProcessInternal, BreakPointCallback setBreakPointCallback, SetIPCallback setIPCallback) -> void;
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
 
 private:
     QHexView* m_qHexVw[3];
+    QTextEdit* m_txtDecompiler;
+    QTabWidget* m_qTabHaruka;
     HANDLE m_hProcessInternal;
     BreakPointCallback m_setBreakPointCallback;
     SetIPCallback m_setIPCallback;
+    Decompiler* m_decompilerSyntax = { nullptr };
 
     auto updateMemoryInspector(QHexView* memoryInspector, QString addressString) -> void;
 

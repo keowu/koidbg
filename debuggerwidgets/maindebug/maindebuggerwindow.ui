@@ -593,13 +593,20 @@
       </property>
      </widget>
     </widget>
-    <widget class="QWidget" name="tab_12">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
+    <widget class="QWidget" name="tab_16">
      <attribute name="title">
       <string>Decompiler</string>
      </attribute>
+     <widget class="QTextEdit" name="txtDecompiler">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>941</width>
+        <height>641</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
    </widget>
   </widget>
@@ -639,6 +646,7 @@
     <addaction name="actionMemory_Patchs"/>
     <addaction name="actionExport_Patchs"/>
     <addaction name="actionImport_Patchs"/>
+    <addaction name="btnColorMode"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -734,6 +742,11 @@
   <action name="btnStop">
    <property name="text">
     <string>Stop</string>
+   </property>
+  </action>
+  <action name="btnColorMode">
+   <property name="text">
+    <string>Dark Mode</string>
    </property>
   </action>
  </widget>

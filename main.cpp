@@ -10,6 +10,7 @@
 #include <QtWidgets/QApplication>
 #include <QMessageBox>
 #include <Shlobj.h>
+#include "testcode/TestesKeystoneIntegration.hh"
 
 
 auto elevateProcess() -> void {

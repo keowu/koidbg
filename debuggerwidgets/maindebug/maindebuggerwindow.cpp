@@ -10,6 +10,9 @@
 #include "./ui_maindebuggerwindow.h"
 #include "debuggerwidgets/attachprocess/attachprocesswindow.h"
 #include "debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.h"
+#include "debuggerwidgets/patchs/memorypatchs.hh"
+#include "debuggerwidgets/patchs/exportpatchs.hh"
+#include "debuggerwidgets/patchs/importpatchs.hh"
 #include <windows.h>
 #include <QDebug>
 #include <QFileDialog>
@@ -33,7 +36,6 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
      */
     connect(ui->btnOpenExecutable, &QAction::triggered, this, &MainDebuggerWindow::onOpenExecutableClicked);
     connect(ui->btnAttachProcessContainer, &QAction::triggered, this, &MainDebuggerWindow::onAttachProcessClicked);
-    connect(ui->btnDebugDynamicLibrary, &QAction::triggered, this, &MainDebuggerWindow::onDebugDynamicLibraryClicked);
     connect(ui->btnRun, &QAction::triggered, this, &MainDebuggerWindow::onRunDebug);
     connect(ui->btnStepOver, &QAction::triggered, this, &MainDebuggerWindow::onStepOver);
     connect(ui->btnStepIn, &QAction::triggered, this, &MainDebuggerWindow::onStepIn);
@@ -49,6 +51,9 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->btnClearPdb, &QPushButton::clicked, this, &MainDebuggerWindow::OnClearPdbClicked);
     connect(ui->tblPdbFunctions, &QTableView::clicked, this, &MainDebuggerWindow::onPdbFunctionClicked);
     connect(ui->btnColorMode, &QAction::triggered, this, &MainDebuggerWindow::onThemeColorModeClicked);
+    connect(ui->btnMemoryPatchs, &QAction::triggered, this, &MainDebuggerWindow::onMemoryPatchs);
+    connect(ui->btnExportPatchs, &QAction::triggered, this, &MainDebuggerWindow::onExportPatchs);
+    connect(ui->btnImportPatchs, &QAction::triggered, this, &MainDebuggerWindow::onImportPatchs);
 
     /*
      * Block ListView Edit Value
@@ -152,12 +157,6 @@ void MainDebuggerWindow::onAttachProcessClicked() {
     connect(attach, &AttachProcessWindow::onProcessSelectedAttach, this, &MainDebuggerWindow::onProcessAttachSelected);
 
     attach->show();
-
-}
-
-void MainDebuggerWindow::onDebugDynamicLibraryClicked() {
-
-    qDebug() << "Hello World !";
 
 }
 
@@ -285,6 +284,30 @@ auto MainDebuggerWindow::onUserTabChangedClick(int index) -> void {
             qDebug() << "Kurumi not loaded :(";
 
     }
+
+}
+
+auto MainDebuggerWindow::onMemoryPatchs() -> void {
+
+    auto memPatchs = new MemoryPatchs(this);
+
+    memPatchs->show();
+
+}
+
+auto MainDebuggerWindow::onExportPatchs() -> void {
+
+    auto exportPatchs = new ExportPatchs(this);
+
+    exportPatchs->show();
+
+}
+
+auto MainDebuggerWindow::onImportPatchs() -> void {
+
+    auto impPatchs = new ImportPatchs(this);
+
+    impPatchs->show();
 
 }
 

@@ -36,7 +36,6 @@ public slots:
 private slots:
     void onOpenExecutableClicked();
     void onAttachProcessClicked();
-    void onDebugDynamicLibraryClicked();
     void onRunDebug();
     void onStepOut();
     void onStepOver();
@@ -53,6 +52,9 @@ private slots:
     auto onUserTabChangedClick(int index) -> void;
     auto onPdbFunctionClicked(const QModelIndex &index) -> void;
     void onThemeColorModeClicked();
+    auto onMemoryPatchs() -> void;
+    auto onExportPatchs() -> void;
+    auto onImportPatchs() -> void;
 
 private:
     Ui::MainDebuggerWindow *ui;

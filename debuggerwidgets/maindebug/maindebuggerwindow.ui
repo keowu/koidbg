@@ -635,7 +635,6 @@
     </property>
     <addaction name="btnOpenExecutable"/>
     <addaction name="btnAttachProcessContainer"/>
-    <addaction name="btnDebugDynamicLibrary"/>
     <addaction name="separator"/>
     <addaction name="btnExit"/>
    </widget>
@@ -643,9 +642,9 @@
     <property name="title">
      <string>Utils</string>
     </property>
-    <addaction name="actionMemory_Patchs"/>
-    <addaction name="actionExport_Patchs"/>
-    <addaction name="actionImport_Patchs"/>
+    <addaction name="btnMemoryPatchs"/>
+    <addaction name="btnExportPatchs"/>
+    <addaction name="btnImportPatchs"/>
     <addaction name="btnColorMode"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
@@ -699,17 +698,17 @@
     <string>Exit</string>
    </property>
   </action>
-  <action name="actionMemory_Patchs">
+  <action name="btnMemoryPatchs">
    <property name="text">
     <string>Memory Patchs</string>
    </property>
   </action>
-  <action name="actionExport_Patchs">
+  <action name="btnExportPatchs">
    <property name="text">
     <string>Export Patchs</string>
    </property>
   </action>
-  <action name="actionImport_Patchs">
+  <action name="btnImportPatchs">
    <property name="text">
     <string>Import Patchs</string>
    </property>

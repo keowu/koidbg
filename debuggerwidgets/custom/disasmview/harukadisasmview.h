@@ -49,6 +49,7 @@ private slots:
     void onMemoryInspector3();
     void onActionSetIp();
     void onDecompileToPseudoC();
+    void onPatchCode();
 
 };
 

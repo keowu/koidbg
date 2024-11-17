@@ -48,6 +48,7 @@ void HarukaDisasmView::contextMenuEvent(QContextMenuEvent *event) {
     QAction *actionMemoryInspector3 = contextMenu.addAction("Follow in Memory Inspector 3");
     QAction *actionSetIp = contextMenu.addAction("Set IP to this location");
     QAction *actionDecompile = contextMenu.addAction("Decompile to Pseudo-C");
+    QAction *actionPatch = contextMenu.addAction("Patch Code");
 
     connect(actionSftInterrupt, &QAction::triggered, this, &HarukaDisasmView::onSoftwareInterrupt);
     connect(actionHwInterrupt, &QAction::triggered, this, &HarukaDisasmView::onHardwareInterrupt);
@@ -56,6 +57,8 @@ void HarukaDisasmView::contextMenuEvent(QContextMenuEvent *event) {
     connect(actionMemoryInspector3, &QAction::triggered, this, &HarukaDisasmView::onMemoryInspector3);
     connect(actionSetIp, &QAction::triggered, this, &HarukaDisasmView::onActionSetIp);
     connect(actionDecompile, &QAction::triggered, this, &HarukaDisasmView::onDecompileToPseudoC);
+    connect(actionPatch, &QAction::triggered, this, &HarukaDisasmView::onPatchCode);
+
 
     contextMenu.exec(event->globalPos());
 }
@@ -384,5 +387,11 @@ void HarukaDisasmView::onDecompileToPseudoC() {
     #endif
 
     this->m_qTabHaruka->setCurrentIndex(10);
+
+}
+
+void HarukaDisasmView::onPatchCode() {
+
+    qDebug() << "HarukaDisasmView::onPatchCode";
 
 }

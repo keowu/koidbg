@@ -1,5 +1,5 @@
 /*
-    File: harukadisasmview.h
+    File: harukadisasmview.hh
     Author: João Vitor(@Keowu)
     Created: 24/08/2024
     Last Update: 10/11/2024
@@ -14,7 +14,7 @@
 #include <QMenu>
 #include <QScrollBar>
 #include <Windows.h>
-#include "debuggerwidgets/custom/qhexview/QHexView.hpp"
+#include "debuggerwidgets/custom/qhexview/QHexView.hh"
 #include "decompiler/decompiler.hh"
 
 using BreakPointCallback = std::function<void(uintptr_t, bool)>;

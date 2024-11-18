@@ -1,5 +1,5 @@
 /*
-    File: DebugMemory.h
+    File: DebugMemory.hh
     Author: João Vitor(@Keowu)
     Created: 08/08/2024
     Last Update: 08/09/2024

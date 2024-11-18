@@ -1,5 +1,5 @@
 /*
-    File: DebugBreakpoints.h
+    File: DebugBreakpoints.hh
     Author: João Vitor(@Keowu)
     Created: 11/08/2024
     Last Update: 08/09/2024

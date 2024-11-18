@@ -7,50 +7,50 @@ CONFIG += c++20
 
 SOURCES += \
     assemblerengine/assemblerengine.cc \
+    debuggerengine/debugbreakpoint.cc \
     debuggerengine/debugcodepatchs.cc \
-    debuggerengine/debugbreakpoint.cpp \
-    debuggerengine/debughandle.cpp \
-    debuggerengine/debugmemory.cpp \
-    debuggerengine/debugmodule.cpp \
-    debuggerengine/debugthread.cpp \
-    debuggerwidgets/attachprocess/attachprocesswindow.cpp \
-    debuggerengine/debuggerengine.cpp \
-    debuggerwidgets/custom/disasmview/harukadisasmview.cpp \
-    debuggerwidgets/custom/qhexview/QHexView.cpp \
+    debuggerengine/debuggerengine.cc \
+    debuggerengine/debughandle.cc \
+    debuggerengine/debugmemory.cc \
+    debuggerengine/debugmodule.cc \
+    debuggerengine/debugthread.cc \
+    debuggerutils/utilswindowssyscall.cc \
+    debuggerwidgets/attachprocess/attachprocesswindow.cc \
+    debuggerwidgets/custom/disasmview/harukadisasmview.cc \
+    debuggerwidgets/custom/qhexview/QHexView.cc \
+    debuggerwidgets/maindebug/maindebuggerwindow.cc \
     debuggerwidgets/patchs/memorypatchs.cc \
     debuggerwidgets/patchs/exportpatchs.cc \
     debuggerwidgets/patchs/importpatchs.cc \
-    decompiler/decompiler.cpp \
-    disassemblerengine/disassemblerengine.cpp \
-    main.cpp \
-    debuggerwidgets/maindebug/maindebuggerwindow.cpp \
-    debuggerutils/utilswindowssyscall.cpp
+    decompiler/decompiler.cc \
+    disassemblerengine/disassemblerengine.cc \
+    main.cc
 
 HEADERS += \
     TestesKeystoneIntegration.hh \
     assemblerengine/assemblerengine.hh \
     debuggercommands/SafeCommandQueue.hh \
+    debuggerengine/DebuggerEngine.hh \
+    debuggerengine/debugbreakpoint.hh \
     debuggerengine/debugcodepatchs.hh \
-    debuggerengine/DebuggerEngine.h \
-    debuggerengine/debugbreakpoint.h \
-    debuggerengine/debughandle.h \
-    debuggerengine/debugmemory.h \
-    debuggerengine/debugmodule.h \
-    debuggerengine/debugthread.h \
-    debuggerutils/defs.h \
-    debuggerwidgets/attachprocess/attachprocesswindow.h \
-    debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.h \
-    debuggerwidgets/custom/disasmview/harukadisasmview.h \
-    debuggerwidgets/custom/qhexview/QHexView.hpp \
+    debuggerengine/debughandle.hh \
+    debuggerengine/debugmemory.hh \
+    debuggerengine/debugmodule.hh \
+    debuggerengine/debugthread.hh \
+    debuggerutils/defs.hh \
+    debuggerutils/utilswindowssyscall.hh \
+    debuggerwidgets/attachprocess/attachprocesswindow.hh \
+    debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.hh \
+    debuggerwidgets/custom/disasmview/harukadisasmview.hh \
+    debuggerwidgets/custom/qhexview/QHexView.hh \
+    debuggerwidgets/maindebug/maindebuggerwindow.hh \
     debuggerwidgets/patchs/memorypatchs.hh \
     debuggerwidgets/patchs/exportpatchs.hh \
     debuggerwidgets/patchs/importpatchs.hh \
     decompiler/decompiler.hh \
-    disassemblerengine/disassemblerengine.h \
-    disassemblerengine/disassemblerutils.h \
-    debuggerwidgets/maindebug/maindebuggerwindow.h \
-    debuggerutils/utilswindowssyscall.h \
+    disassemblerengine/disassemblerengine.hh \
     debuggercommands/lexer.hh \
+    disassemblerengine/disassemblerutils.hh \
     testcode/TestesKeystoneIntegration.hh
     #testcode/TestesUnicornIntegration.hh
 

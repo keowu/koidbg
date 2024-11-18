@@ -1,5 +1,5 @@
 /*
-    File: DebugHandles.h
+    File: DebugHandles.hh
     Author: João Vitor(@Keowu)
     Created: 08/08/2024
     Last Update: 12/08/2024

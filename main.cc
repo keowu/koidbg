@@ -1,12 +1,12 @@
 /*
-    File: main.cpp
+    File: main.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
     Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
-#include "debuggerwidgets/maindebug/MainDebuggerWindow.h"
+#include "debuggerwidgets/maindebug/MainDebuggerWindow.hh"
 #include <QtWidgets/QApplication>
 #include <QMessageBox>
 #include <Shlobj.h>

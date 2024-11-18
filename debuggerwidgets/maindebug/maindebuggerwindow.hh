@@ -1,5 +1,5 @@
 /*
-    File: MainDebuggerWindow.h
+    File: MainDebuggerWindow.hh
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
     Last Update: 10/11/2024
@@ -13,7 +13,7 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include <KurumiParser.hh>
-#include "debuggerengine/DebuggerEngine.h"
+#include "debuggerengine/DebuggerEngine.hh"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

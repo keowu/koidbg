@@ -1,13 +1,13 @@
 /*
-    File: DisassemblerEngine.cpp
+    File: DisassemblerEngine.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
     Last Update: 21/10/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
-#include "disassemblerengine.h"
-#include "disassemblerengine/disassemblerutils.h"
+#include "disassemblerengine.hh"
+#include "disassemblerengine/disassemblerutils.hh"
 
 auto DisassemblerEngine::RunCapstoneEngineAarch64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes, DisasmEngineConfig engCfg) -> void {
 

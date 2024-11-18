@@ -1,5 +1,5 @@
 /*
-    File: DebuggerEngine.cpp
+    File: DebuggerEngine.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
     Last Update: 10/11/2024
@@ -7,10 +7,10 @@
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
 #include <bitset>
-#include "debuggerengine.h"
+#include "debuggerengine.hh"
 #include "qstringlistmodel.h"
-#include "disassemblerengine/disassemblerengine.h"
-#include "debuggerutils/utilswindowssyscall.h"
+#include "disassemblerengine/disassemblerengine.hh"
+#include "debuggerutils/utilswindowssyscall.hh"
 
 auto DebuggerEngine::AddStringToListView(QListView* list, QString stringArgument) -> void {
 

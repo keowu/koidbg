@@ -753,12 +753,12 @@
   <customwidget>
    <class>HarukaDisasmView</class>
    <extends>QTableView</extends>
-   <header>debuggerwidgets\custom\disasmview\harukadisasmview.h</header>
+   <header>debuggerwidgets\custom\disasmview\harukadisasmview.hh</header>
   </customwidget>
   <customwidget>
    <class>QHexView</class>
    <extends>QListWidget</extends>
-   <header>debuggerwidgets\custom\qhexview\QHexView.hpp</header>
+   <header>debuggerwidgets\custom\qhexview\QHexView.hh</header>
   </customwidget>
  </customwidgets>
  <resources/>

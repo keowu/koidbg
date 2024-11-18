@@ -1,5 +1,5 @@
 /*
-    File: DebuggerEngine.h
+    File: DebuggerEngine.hh
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
     Last Update: 10/11/2024
@@ -8,11 +8,11 @@
 */
 #ifndef DEBUGGERENGINE_H
 #define DEBUGGERENGINE_H
-#include "debugmodule.h"
-#include "debugthread.h"
-#include "debughandle.h"
-#include "debugmemory.h"
-#include "debugbreakpoint.h"
+#include "debugmodule.hh"
+#include "debugthread.hh"
+#include "debughandle.hh"
+#include "debugmemory.hh"
+#include "debugbreakpoint.hh"
 #include "debuggercommands/SafeCommandQueue.hh"
 #include "qlistview.h"
 #include <QMainWindow>
@@ -26,8 +26,8 @@
 #include <QScrollBar>
 #include <QStandardItemModel>
 #include <QtConcurrent/QtConcurrent>
-#include "debuggerwidgets/custom/disasmview/harukadisasmview.h"
-#include "debuggerwidgets/custom/qhexview/QHexView.hpp"
+#include "debuggerwidgets/custom/disasmview/harukadisasmview.hh"
+#include "debuggerwidgets/custom/qhexview/QHexView.hh"
 #include <KurumiParser.hh>
 
 class DebuggerEngine {

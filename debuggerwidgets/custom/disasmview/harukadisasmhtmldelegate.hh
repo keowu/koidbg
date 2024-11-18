@@ -1,5 +1,5 @@
 /*
-    File: harukadisasmhtmldelegate.h
+    File: harukadisasmhtmldelegate.hh
     Author: João Vitor(@Keowu)
     Created: 24/08/2024
     Last Update: 08/09/2024

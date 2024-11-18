@@ -1,12 +1,12 @@
 /*
-    File: DebugThread.cpp
+    File: DebugThread.cc
     Author: João Vitor(@Keowu)
     Created: 08/08/2024
     Last Update: 08/09/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
-#include "debugthread.h"
+#include "debugthread.hh"
 
 auto DebugThread::getPriorityLevelToString() -> QString {
 

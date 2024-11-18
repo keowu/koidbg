@@ -1,15 +1,15 @@
 /*
-    File: MainDebuggerWindow.cpp
+    File: MainDebuggerWindow.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
     Last Update: 10/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
-#include "maindebuggerwindow.h"
+#include "maindebuggerwindow.hh"
 #include "./ui_maindebuggerwindow.h"
-#include "debuggerwidgets/attachprocess/attachprocesswindow.h"
-#include "debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.h"
+#include "debuggerwidgets/attachprocess/attachprocesswindow.hh"
+#include "debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.hh"
 #include "debuggerwidgets/patchs/memorypatchs.hh"
 #include "debuggerwidgets/patchs/exportpatchs.hh"
 #include "debuggerwidgets/patchs/importpatchs.hh"

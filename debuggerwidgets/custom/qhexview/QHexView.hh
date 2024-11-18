@@ -1,5 +1,5 @@
 /*
-    File: QHexView.hpp
+    File: QHexView.hh
     Author: João Vitor(@Keowu) - 2024, @VitorMob - 2022, @virinext - 2015
     Created: 30/08/2024
     Last Update: 01/09/2024

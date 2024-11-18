@@ -1,5 +1,5 @@
 /*
-    File: decompiler.cpp
+    File: decompiler.cc
     Author: João Vitor(@Keowu)
     Created: 10/11/2024
     Last Update: 10/11/2024

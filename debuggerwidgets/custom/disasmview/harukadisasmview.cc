@@ -1,12 +1,12 @@
 /*
-    File: harukadisasmview.h
+    File: harukadisasmview.cc
     Author: João Vitor(@Keowu)
     Created: 24/08/2024
     Last Update: 10/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
-#include "debuggerwidgets/custom/disasmview/harukadisasmview.h"
+#include "debuggerwidgets/custom/disasmview/harukadisasmview.hh"
 #include <QAction>
 #include <QDebug>
 

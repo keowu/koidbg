@@ -1,12 +1,12 @@
 /*
-    File: AttachProcessWindow.cpp
+    File: AttachProcessWindow.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
     Last Update: 25/08/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
-#include "attachprocesswindow.h"
+#include "attachprocesswindow.hh"
 #include "ui_attachprocesswindow.h"
 
 AttachProcessWindow::AttachProcessWindow(QWidget *parent)

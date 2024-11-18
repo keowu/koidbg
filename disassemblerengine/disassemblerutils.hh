@@ -1,5 +1,5 @@
 /*
-    File: DisassemblerUtils.h
+    File: DisassemblerUtils.hh
     Author: João Vitor(@Keowu)
     Created: 17/08/2024
     Last Update: 08/09/2024
@@ -13,7 +13,7 @@
 #include <QRegularExpression>
 #include <capstone/platform.h>
 #include <capstone/capstone.h>
-#include "debuggerutils/utilswindowssyscall.h"
+#include "debuggerutils/utilswindowssyscall.hh"
 
 namespace DisassemblerUtils {
 

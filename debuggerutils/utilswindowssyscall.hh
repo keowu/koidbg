@@ -1,5 +1,5 @@
 /*
-    File: utilswindowssycall.h
+    File: utilswindowssycall.hh
     Author: João Vitor(@Keowu)
     Created: 24/07/2024
     Last Update: 03/11/2024
@@ -17,7 +17,7 @@
 #include <QMainWindow>
 #include <QtCore/QString>
 #include <QtCore/QDebug>
-#include <debuggerutils/defs.h>
+#include <debuggerutils/defs.hh>
 
 #define ThreadBasicInformation 0
 

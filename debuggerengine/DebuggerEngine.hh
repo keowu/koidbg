@@ -2,7 +2,7 @@
     File: DebuggerEngine.hh
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 10/11/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -13,6 +13,7 @@
 #include "debughandle.hh"
 #include "debugmemory.hh"
 #include "debugbreakpoint.hh"
+#include "debugcodepatchs.hh"
 #include "debuggercommands/SafeCommandQueue.hh"
 #include "qlistview.h"
 #include <QMainWindow>
@@ -91,6 +92,14 @@ public:
     SafeCommandQueue m_commandProcessingQueue;
 
     /*
+     * Debuggee process Handler
+     */
+    auto getDebuggeHandle() -> HANDLE {
+
+        return this->hInternalDebugHandle;
+    }
+
+    /*
      * Stoping engine
      */
     auto stopEngine() -> void;
@@ -162,6 +171,19 @@ public:
     */
     auto UpdateDisassemblerView(const uintptr_t uipAddress) -> void;
 
+    /*
+     * Patching utils
+     */
+    auto getDebugCodePatchs() -> std::vector<DebugCodePatchs>* {
+
+        return &this->m_debugcodepatchs;
+    }
+
+    auto getNewPatchCallback() -> SetPatching {
+
+        return std::bind(&DebuggerEngine::SetNewPatch, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+    }
+
 private:
     /*
      *  Generic Variables
@@ -189,6 +211,7 @@ private:
     int m_hardwareDebugControl = 0;
     std::vector<DebugHandle> m_debugHandles;
     std::vector<DebugMemory> m_debugMemory;
+    std::vector<DebugCodePatchs> m_debugcodepatchs;
 
     /*
      * Initializers
@@ -247,6 +270,11 @@ private:
      */
     auto UpdateDisassemblerView(const DWORD dwTID) -> void;
     auto UpdateActualIPContext(uintptr_t uipAddressToIP) -> void;
+
+    /*
+     * Process patchs events
+     */
+    auto SetNewPatch(std::string moduleName, uintptr_t offset, const std::vector<uint8_t>& orOpcodes, const std::vector<uint8_t>& newOpcodes) -> void;
 
 };
 

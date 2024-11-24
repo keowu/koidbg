@@ -2,7 +2,7 @@
     File: exportpatchs.hh
     Author: João Vitor(@Keowu)
     Created: 17/11/2024
-    Last Update: 17/11/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -10,21 +10,31 @@
 #define EXPORTPATCHS_HH
 
 #include <QMainWindow>
+#include <QByteArray>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <json.hpp>
+#include "debuggerengine/debugcodepatchs.hh"
+
+using json = nlohmann::json;
 
 namespace Ui {
-class ExportPatchs;
+    class ExportPatchs;
 }
 
-class ExportPatchs : public QMainWindow
-{
+class ExportPatchs : public QMainWindow {
+
     Q_OBJECT
 
 public:
-    explicit ExportPatchs(QWidget *parent = nullptr);
+    explicit ExportPatchs(QWidget *parent = nullptr, std::vector<DebugCodePatchs>* codePatchs = {});
     ~ExportPatchs();
 
 private:
     Ui::ExportPatchs *ui;
+    std::vector<DebugCodePatchs>* m_codePatchs;
+    auto OnExportClicked() -> void;
+
 };
 
 #endif // ExportPatchs_HH

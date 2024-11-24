@@ -2,7 +2,7 @@
     File: DisassemblerEngine.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 21/10/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -394,4 +394,48 @@ auto DisassemblerEngine::RunCapstoneForSingleStepx86(uintptr_t uipVirtualAddress
     }
 
     return 0;
+}
+
+auto DisassemblerEngine::RunCapstoneForSimpleOpcodeBlocARM64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> QString {
+
+    QString disassemblerLine = "";
+
+    csh handle;
+
+    auto err = cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &handle);
+
+    if (err != CS_ERR_OK) return disassemblerLine;
+
+    cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+
+    cs_insn* insn;
+    size_t count = cs_disasm(handle, ucOpcodes, szOpcodes, uipVirtualAddress, 0, &insn);
+
+    if (count > 0) disassemblerLine = QString(insn[0].mnemonic) + " " + QString(insn[0].op_str);
+
+    cs_close(&handle);
+
+    return disassemblerLine;
+}
+
+auto DisassemblerEngine::RunCapstoneForSimpleOpcodeBlocX86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> QString {
+
+    QString disassemblerLine = "";
+
+    csh handle;
+
+    auto err = cs_open(CS_ARCH_X86, CS_MODE_64, &handle);
+
+    if (err != CS_ERR_OK) return disassemblerLine;
+
+    cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+
+    cs_insn* insn;
+    size_t count = cs_disasm(handle, ucOpcodes, szOpcodes, uipVirtualAddress, 0, &insn);
+
+    if (count > 0) disassemblerLine = QString(insn[0].mnemonic) + " " + QString(insn[0].op_str);
+
+    cs_close(&handle);
+
+    return disassemblerLine;
 }

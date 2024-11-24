@@ -646,6 +646,7 @@
     <addaction name="btnExportPatchs"/>
     <addaction name="btnImportPatchs"/>
     <addaction name="btnColorMode"/>
+    <addaction name="actionARM_Processor_Features"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -746,6 +747,11 @@
   <action name="btnColorMode">
    <property name="text">
     <string>Dark Mode</string>
+   </property>
+  </action>
+  <action name="actionARM_Processor_Features">
+   <property name="text">
+    <string>ARM Processor Features</string>
    </property>
   </action>
  </widget>

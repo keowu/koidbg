@@ -88,7 +88,7 @@ auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
     auto status = SymInitialize(hSym, this->m_filePath.c_str(), false);
     if (!status) {
 
-        std::cerr << "Failed to initialize symbols.\n";
+        std::cerr << "Kurumi::HarukaEngine -> Fail on haruka seeking for symbol initilizer provider.\n";
 
         return -1;
     }
@@ -97,7 +97,7 @@ auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
 
     if (!status) {
 
-        std::cerr << "Failed to SymSetSearchPath.\n";
+        std::cerr << "Kurumi::HarukaEngine -> Fail on haruka looking for a symbol path.\n";
 
         return -1;
     }
@@ -105,7 +105,7 @@ auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
     auto base = SymLoadModuleEx(hSym, nullptr, this->m_filePath.c_str(), nullptr, 0, 0, nullptr, 0);
     if (base == 0) {
 
-        std::cerr << "Failed to load module.\n";
+        std::cerr << "Kurumi::HarukaEngine -> Haruka was not able to load .hkpdb file.\n";
         
         SymCleanup(hSym);
         
@@ -121,7 +121,7 @@ auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
     status = SymGetTypeFromName(hSym, base, fieldName.c_str(), info);
     if (!status) {
         
-        std::cerr << "Failed to get symbol information.\n";
+        std::cerr << "Kurumi::HarukaEngine -> Haruka was not able to get typeinfo by name (This normally happen when this symbol is not loaded by OS yet).\n";
         
         SymCleanup(hSym);
     
@@ -140,7 +140,9 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
     auto hSym = GetCurrentProcess();
 
     if (!SymInitialize(hSym, m_filePath.c_str(), false)) {
-        std::cerr << "Failed to initialize symbols.\n";
+
+        std::cerr << "Kurumi::HarukaEngine -> Fail to initialize .hkpdb engine.\n";
+
         return -1;
     }
 
@@ -149,7 +151,7 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
     auto base = SymLoadModuleEx(hSym, nullptr, m_filePath.c_str(), nullptr, 0, 0, nullptr, 0);
     if (base == 0) {
 
-        std::cerr << "Failed to load module.\n";
+        std::cerr << "Kurumi::HarukaEngine -> Fail to load .hkpdb file.\n";
 
         SymCleanup(hSym);
         return -1;
@@ -161,7 +163,7 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
 
     if (!SymGetTypeFromName(hSym, base, structName.c_str(), &symInfoPackage.si)) {
 
-        std::cerr << "Failed to locate struct: " << structName << "\n";
+        std::cerr << "Kurumi::HarukaEngine -> Fail to locate a struct in hkpdb: " << structName << "\n";
 
         SymUnloadModule64(hSym, base);
         SymCleanup(hSym);
@@ -174,10 +176,11 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
     DWORD numChildren = 0;
     if (!SymGetTypeInfo(hSym, moduleBase, typeId, TI_GET_CHILDRENCOUNT, &numChildren)) {
 
-        std::cerr << "Failed to get struct members.\n";
+        std::cerr << "Kurumi::HarukaEngine -> Fail getting hkpdb struct members.\n";
 
         SymUnloadModule64(hSym, base);
         SymCleanup(hSym);
+
         return -1;
     }
 
@@ -187,7 +190,7 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
 
     if (!SymGetTypeInfo(hSym, moduleBase, typeId, TI_FINDCHILDREN, children)) {
 
-        std::cerr << "Failed to retrieve child members.\n";
+        std::cerr << "Kurumi::HarukaEngine -> Fail getting hkpdb child fields.\n";
 
         delete[] children;
 
@@ -311,7 +314,7 @@ namespace Kurumi {
 
     auto _stdcall AttachKewDbgHarukaMiraiDevelopmentInterface() -> void {
 
-        std::printf("Lolis DBG Interface are desactivated on compile time to avoid bad use of engine.\n");
+        std::printf("Kurumi::HarukaEngine -> The Fluxuss Lolis Code Debugger are desactivated on compile time to avoid bad use of engine and code.\n");
 
     }
 

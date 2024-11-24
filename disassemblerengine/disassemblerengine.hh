@@ -2,7 +2,7 @@
     File: DisassemblerEngine.hh
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 08/09/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -747,6 +747,9 @@ public:
 
     auto RunCapstoneForSingleStepARM64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t;
     auto RunCapstoneForSingleStepx86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> uintptr_t;
+
+    auto RunCapstoneForSimpleOpcodeBlocARM64(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> QString;
+    auto RunCapstoneForSimpleOpcodeBlocX86(uintptr_t uipVirtualAddress, unsigned char* ucOpcodes, size_t szOpcodes) -> QString;
 
 };
 

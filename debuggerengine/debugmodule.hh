@@ -2,7 +2,7 @@
     File: DebugModule.hh
     Author: João Vitor(@Keowu)
     Created: 08/08/2024
-    Last Update: 08/08/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -19,6 +19,7 @@ public:
     uintptr_t m_lpModuleBase;
 
     DebugModule(HANDLE hModule, QString qStName, uintptr_t lpModuleBase);
+    DebugModule(){ };
 
 };
 

@@ -2,11 +2,12 @@
     File: harukadisasmview.cc
     Author: João Vitor(@Keowu)
     Created: 24/08/2024
-    Last Update: 10/11/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
 #include "debuggerwidgets/custom/disasmview/harukadisasmview.hh"
+#include "debuggerwidgets/patchs/patchCode.hh"
 #include <QAction>
 #include <QDebug>
 
@@ -15,13 +16,9 @@ HarukaDisasmView::HarukaDisasmView(QWidget *parent)
 
 }
 
-auto HarukaDisasmView::configureDisasm(QHexView* qHexVw[3], QTextEdit* txtDecompiler, QTabWidget* qTabHaruka, HANDLE hProcessInternal, BreakPointCallback setBreakPointCallback, SetIPCallback setIPCallback) -> void {
+auto HarukaDisasmView::configureDisasm(QHexView* qHexVw[3], QTextEdit* txtDecompiler, QTabWidget* qTabHaruka, HANDLE hProcessInternal, BreakPointCallback setBreakPointCallback, SetIPCallback setIPCallback, SetPatching setPatching) -> void {
 
-    for (int i = 0; i < 3; ++i) {
-
-        this->m_qHexVw[i] = qHexVw[i];
-
-    }
+    std::memcpy(this->m_qHexVw, qHexVw, sizeof(QHexView*) * 3);
 
     this->m_txtDecompiler = txtDecompiler;
 
@@ -32,6 +29,8 @@ auto HarukaDisasmView::configureDisasm(QHexView* qHexVw[3], QTextEdit* txtDecomp
     this->m_setBreakPointCallback = setBreakPointCallback;
 
     this->m_setIPCallback = setIPCallback;
+
+    this->m_setPatchingCallback = setPatching;
 
     if (this->m_decompilerSyntax) delete m_decompilerSyntax;
 
@@ -48,7 +47,7 @@ void HarukaDisasmView::contextMenuEvent(QContextMenuEvent *event) {
     QAction *actionMemoryInspector3 = contextMenu.addAction("Follow in Memory Inspector 3");
     QAction *actionSetIp = contextMenu.addAction("Set IP to this location");
     QAction *actionDecompile = contextMenu.addAction("Decompile to Pseudo-C");
-    QAction *actionPatch = contextMenu.addAction("Patch Code");
+    QAction *actionPatch = contextMenu.addAction("Modify Code");
 
     connect(actionSftInterrupt, &QAction::triggered, this, &HarukaDisasmView::onSoftwareInterrupt);
     connect(actionHwInterrupt, &QAction::triggered, this, &HarukaDisasmView::onHardwareInterrupt);
@@ -65,18 +64,18 @@ void HarukaDisasmView::contextMenuEvent(QContextMenuEvent *event) {
 
 void HarukaDisasmView::onSoftwareInterrupt() {
 
-    QModelIndex index = currentIndex();
+    auto index = currentIndex();
 
     if (index.isValid()) {
 
-        QModelIndex column0Index = index.model()->index(index.row(), 0);
+        auto column0Index = index.model()->index(index.row(), 0);
 
-        QString addressString = column0Index.data().toString();
+        auto addressString = column0Index.data().toString();
 
         addressString.remove("0x");
 
         bool bConverted;
-        uintptr_t address = addressString.toULongLong(&bConverted, 16);
+        auto address = addressString.toULongLong(&bConverted, 16);
 
         if (bConverted) {
 
@@ -89,18 +88,18 @@ void HarukaDisasmView::onSoftwareInterrupt() {
 
 void HarukaDisasmView::onHardwareInterrupt() {
 
-    QModelIndex index = currentIndex();
+    auto index = currentIndex();
 
     if (index.isValid()) {
 
-        QModelIndex column0Index = index.model()->index(index.row(), 0);
+        auto column0Index = index.model()->index(index.row(), 0);
 
-        QString addressString = column0Index.data().toString();
+        auto addressString = column0Index.data().toString();
 
         addressString.remove("0x");
 
         bool bConverted;
-        uintptr_t address = addressString.toULongLong(&bConverted, 16);
+        auto address = addressString.toULongLong(&bConverted, 16);
 
         if (bConverted) {
 
@@ -112,11 +111,12 @@ void HarukaDisasmView::onHardwareInterrupt() {
 }
 
 void HarukaDisasmView::onMemoryInspector1() {
-    QModelIndex index = currentIndex();
+
+    auto index = currentIndex();
 
     if (index.isValid()) {
-        int row = index.row();
-        QModelIndex column0Index = index.model()->index(row, 0);
+
+        auto column0Index = index.model()->index(index.row(), 0);
 
         this->updateMemoryInspector(this->m_qHexVw[0], column0Index.data().toString());
 
@@ -125,13 +125,11 @@ void HarukaDisasmView::onMemoryInspector1() {
 
 void HarukaDisasmView::onMemoryInspector2() {
 
-    QModelIndex index = currentIndex();
+    auto index = currentIndex();
 
     if (index.isValid()) {
 
-        int row = index.row();
-
-        QModelIndex column0Index = index.model()->index(row, 0);
+        auto column0Index = index.model()->index(index.row(), 0);
 
         this->updateMemoryInspector(this->m_qHexVw[1], column0Index.data().toString());
 
@@ -141,13 +139,11 @@ void HarukaDisasmView::onMemoryInspector2() {
 
 void HarukaDisasmView::onMemoryInspector3() {
 
-    QModelIndex index = currentIndex();
+    auto index = currentIndex();
 
     if (index.isValid()) {
 
-        int row = index.row();
-
-        QModelIndex column0Index = index.model()->index(row, 0);
+        auto column0Index = index.model()->index(index.row(), 0);
 
         this->updateMemoryInspector(this->m_qHexVw[2], column0Index.data().toString());
 
@@ -159,11 +155,11 @@ auto HarukaDisasmView::updateMemoryInspector(QHexView* memoryInspector, QString 
     addressString.remove("0x");
 
     bool bConverted;
-    uintptr_t address = addressString.toULongLong(&bConverted, 16);
+    auto address = addressString.toULongLong(&bConverted, 16);
 
     if (bConverted) {
 
-        PVOID pAddress = reinterpret_cast<PVOID>(address);
+        auto pAddress = reinterpret_cast<PVOID>(address);
 
         SIZE_T bytesRead;
 
@@ -191,20 +187,18 @@ auto HarukaDisasmView::updateMemoryInspector(QHexView* memoryInspector, QString 
 
 void HarukaDisasmView::onActionSetIp() {
 
-    QModelIndex index = currentIndex();
+    auto index = currentIndex();
 
     if (index.isValid()) {
 
-        int row = index.row();
+        auto column0Index = index.model()->index(index.row(), 0);
 
-        QModelIndex column0Index = index.model()->index(row, 0);
-
-        QString addressString = column0Index.data().toString();
+        auto addressString = column0Index.data().toString();
 
         addressString.remove("0x");
 
         bool bConverted;
-        uintptr_t address = addressString.toULongLong(&bConverted, 16);
+        auto address = addressString.toULongLong(&bConverted, 16);
 
         if (bConverted) this->m_setIPCallback(address);
 
@@ -393,5 +387,34 @@ void HarukaDisasmView::onDecompileToPseudoC() {
 void HarukaDisasmView::onPatchCode() {
 
     qDebug() << "HarukaDisasmView::onPatchCode";
+
+    auto index = currentIndex();
+
+    if (index.isValid()) {
+
+        auto column0Index = index.model()->index(index.row(), 0);
+
+        auto addressString = column0Index.data().toString();
+
+        addressString.remove("0x");
+
+        bool bConverted;
+        uintptr_t address = addressString.toULongLong(&bConverted, 16);
+
+        if (bConverted) {
+
+            auto patch = new PatchCode(this, this->m_hProcessInternal, address, this->m_setPatchingCallback);
+
+            patch->show();
+
+            QAbstractItemModel* nonConstModel = const_cast<QAbstractItemModel*>(index.model());
+
+            auto column3Index = nonConstModel->index(index.row(), 3);
+
+            nonConstModel->setData(column3Index, QVariant("PATCHED"), Qt::EditRole);
+
+        }
+
+    }
 
 }

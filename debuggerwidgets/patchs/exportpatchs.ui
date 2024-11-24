@@ -33,7 +33,7 @@
      <string>Export all your binary patchs:</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="btnExportPatchs">
     <property name="geometry">
      <rect>
       <x>150</x>

@@ -22,6 +22,7 @@ SOURCES += \
     debuggerwidgets/patchs/memorypatchs.cc \
     debuggerwidgets/patchs/exportpatchs.cc \
     debuggerwidgets/patchs/importpatchs.cc \
+    debuggerwidgets/patchs/patchcode.cc \
     decompiler/decompiler.cc \
     disassemblerengine/disassemblerengine.cc \
     main.cc
@@ -47,6 +48,7 @@ HEADERS += \
     debuggerwidgets/patchs/memorypatchs.hh \
     debuggerwidgets/patchs/exportpatchs.hh \
     debuggerwidgets/patchs/importpatchs.hh \
+    debuggerwidgets/patchs/patchcode.hh \
     decompiler/decompiler.hh \
     disassemblerengine/disassemblerengine.hh \
     debuggercommands/lexer.hh \
@@ -91,6 +93,14 @@ LIBS += -L$$PWD/kurumiparser/x64 -lKurumiParser
 # ________________________________________________________________________________________________________
 
 #_________________________________________________________________________________________________________
+#|           NLOHMANN JSON                                                                               |
+#_________________________________________________________________________________________________________
+INCLUDEPATH += $$PWD/dependencies/nlohmann_json/
+# ________________________________________________________________________________________________________
+#|                                                                                                        |
+# ________________________________________________________________________________________________________
+
+#_________________________________________________________________________________________________________
 #|           Unicorn(Only for x64, No support for AARM64)                                                 |
 #_________________________________________________________________________________________________________
 #INCLUDEPATH += $$PWD/dependencies/unicorn/include
@@ -107,7 +117,8 @@ FORMS += \
     debuggerwidgets/maindebug/maindebuggerwindow.ui \
     debuggerwidgets/patchs/memorypatchs.ui \
     debuggerwidgets/patchs/exportpatchs.ui \
-    debuggerwidgets/patchs/importpatchs.ui
+    debuggerwidgets/patchs/importpatchs.ui \
+    debuggerwidgets/patchs/patchcode.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

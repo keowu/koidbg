@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 10/11/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -289,7 +289,7 @@ auto MainDebuggerWindow::onUserTabChangedClick(int index) -> void {
 
 auto MainDebuggerWindow::onMemoryPatchs() -> void {
 
-    auto memPatchs = new MemoryPatchs(this);
+    auto memPatchs = new MemoryPatchs(this, this->m_dbgEngine->getDebugCodePatchs(), this->m_dbgEngine->getDebuggeHandle());
 
     memPatchs->show();
 
@@ -297,7 +297,7 @@ auto MainDebuggerWindow::onMemoryPatchs() -> void {
 
 auto MainDebuggerWindow::onExportPatchs() -> void {
 
-    auto exportPatchs = new ExportPatchs(this);
+    auto exportPatchs = new ExportPatchs(this, this->m_dbgEngine->getDebugCodePatchs());
 
     exportPatchs->show();
 
@@ -305,7 +305,7 @@ auto MainDebuggerWindow::onExportPatchs() -> void {
 
 auto MainDebuggerWindow::onImportPatchs() -> void {
 
-    auto impPatchs = new ImportPatchs(this);
+    auto impPatchs = new ImportPatchs(this, this->m_dbgEngine->getNewPatchCallback());
 
     impPatchs->show();
 

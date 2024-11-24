@@ -14,7 +14,7 @@
    <string>Memory Patchs</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QListView" name="listView">
+   <widget class="QListView" name="lstAppliedPatchs">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -41,6 +41,24 @@
     </property>
     <property name="text">
      <string>Memory Patchs List:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>10</y>
+      <width>151</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Tap to remove a patch.</string>
     </property>
    </widget>
   </widget>

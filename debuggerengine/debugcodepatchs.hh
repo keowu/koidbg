@@ -2,7 +2,7 @@
     File: debugcodepatchs.hh
     Author: João Vitor(@Keowu)
     Created: 17/11/2024
-    Last Update: 17/11/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -10,19 +10,19 @@
 #define DEBUGCODEPATCHS_HH
 #include <QMainWindow>
 #include <windows.h>
+#include "debugmodule.hh"
 
-class debugcodepatchs {
+class DebugCodePatchs {
 
-private:
+public:
     uintptr_t m_patchOffset;
-    std::string m_moduleName;
+    DebugModule m_module;
     std::vector<uint8_t> m_originalCode;
     std::vector<uint8_t> m_modifiedCode;
 
-public:
-    debugcodepatchs(uintptr_t patchOffset, const std::string& moduleName,
+    DebugCodePatchs(DebugModule module, uintptr_t patchOffset,
                     const std::vector<uint8_t>& originalCode, const std::vector<uint8_t>& modifiedCode);
-    ~debugcodepatchs();
+    ~DebugCodePatchs() { };
 
 };
 

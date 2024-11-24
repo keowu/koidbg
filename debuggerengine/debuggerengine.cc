@@ -2,7 +2,7 @@
     File: DebuggerEngine.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 10/11/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -154,7 +154,8 @@ auto WINAPI DebuggerEngine::DebugLoop(LPVOID args) -> DWORD {
     QHexView* hexViews[3] = { thiz->m_guiCfg.qHexVw[0], thiz->m_guiCfg.qHexVw[1], thiz->m_guiCfg.qHexVw[2] };
     BreakPointCallback callbackBreakpoint = std::bind(&DebuggerEngine::SetInterrupting, thiz, std::placeholders::_1, std::placeholders::_2);
     SetIPCallback callbackIP = std::bind(&DebuggerEngine::UpdateActualIPContext, thiz, std::placeholders::_1);
-    thiz->m_guiCfg.tblDisasmVw->configureDisasm(hexViews, thiz->m_guiCfg.txtDecompiler, thiz->m_guiCfg.qTabHaruka, thiz->m_processInfo.second.hProcess, callbackBreakpoint, callbackIP);
+    SetPatching setPatch = std::bind(&DebuggerEngine::SetNewPatch, thiz, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+    thiz->m_guiCfg.tblDisasmVw->configureDisasm(hexViews, thiz->m_guiCfg.txtDecompiler, thiz->m_guiCfg.qTabHaruka, thiz->m_processInfo.second.hProcess, callbackBreakpoint, callbackIP, setPatch);
 
     /*
     * Main debugger loop
@@ -863,6 +864,7 @@ auto DebuggerEngine::DeleteAllDebuggerContextEngineExit() -> void {
     this->m_debugBreakpoint.clear();
     this->m_debugHandles.clear();
     this->m_debugMemory.clear();
+    this->m_debugcodepatchs.clear();
 
     //__________________________________________________________________________________________________________
     // Deleting old Disassembler View
@@ -2595,5 +2597,24 @@ auto DebuggerEngine::extractPdbFileFunctions(QString pdbPath) -> void {
 
 
     this->m_guiCfg.lblPdbInspectorMetrics->setText("Imported " + QString::number(vecFunctions.size()) + " functions to our HarukaDB.");
+
+}
+
+auto DebuggerEngine::SetNewPatch(std::string moduleName, uintptr_t offset, const std::vector<uint8_t>& orOpcodes, const std::vector<uint8_t>& newOpcodes) -> void {
+
+    //TODO: Main executable module may not work in this way and need to fix this in the future.
+    DebugModule dbgModule;
+    for (auto& module : this->m_debugModules)
+
+        if (module.m_qStName.contains(QString::fromStdString(moduleName))) {
+
+            dbgModule = module;
+
+            break;
+        }
+
+    if (!dbgModule.m_hModule) return;
+
+    this->m_debugcodepatchs.push_back(DebugCodePatchs(dbgModule, offset, orOpcodes, newOpcodes));
 
 }

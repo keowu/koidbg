@@ -2,7 +2,7 @@
     File: main.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 21/10/2024
+    Last Update: 24/11/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -78,10 +78,17 @@ int main(int argc, char *argv[]) {
 
     QApplication a(argc, argv);
 
-    //Desativar todos os logs da aplicação.
+    //Turn off all logs on release by filter rules
     //QLoggingCategory::setFilterRules("*.debug=false\n"
     //                                 "*.warning=false\n"
     //                                 "*.info=false");
+
+    qInstallMessageHandler([](QtMsgType, const QMessageLogContext&, const QString &msg){
+
+        //On HarukaMirai, We don't care about Qt's threat management, we'll garant it by our own. and manipulating and taking care of the syncronization
+        if (!(msg.contains("parent's thread is QThread") || msg.contains("threads started with QThread")) && msg.contains("[DBGALLOW]")) qDebug() << msg;
+
+    });
 
     MainDebuggerWindow w;
 

@@ -33,7 +33,7 @@
      <string>Import your binary patchs:</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="btnImportPatchs">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -43,7 +43,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Save patchs</string>
+     <string>Open patchs</string>
     </property>
    </widget>
   </widget>

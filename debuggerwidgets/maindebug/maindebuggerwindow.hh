@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.hh
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 24/11/2024
+    Last Update: 01/12/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -55,6 +55,7 @@ private slots:
     auto onMemoryPatchs() -> void;
     auto onExportPatchs() -> void;
     auto onImportPatchs() -> void;
+    auto onProcessorFeatures() -> void;
 
 private:
     Ui::MainDebuggerWindow *ui;

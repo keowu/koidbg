@@ -2,7 +2,7 @@
     File: harukadisasmview.cc
     Author: João Vitor(@Keowu)
     Created: 24/08/2024
-    Last Update: 24/11/2024
+    Last Update: 01/12/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -380,7 +380,7 @@ void HarukaDisasmView::onDecompileToPseudoC() {
             "}");
     #endif
 
-    this->m_qTabHaruka->setCurrentIndex(10);
+    this->m_qTabHaruka->setCurrentIndex(11);
 
 }
 

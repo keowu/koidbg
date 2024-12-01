@@ -2,7 +2,7 @@
     File: DebuggerEngine.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 24/11/2024
+    Last Update: 01/12/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -11,6 +11,7 @@
 #include "qstringlistmodel.h"
 #include "disassemblerengine/disassemblerengine.hh"
 #include "debuggerutils/utilswindowssyscall.hh"
+#include "debuggerwidgets/kurumiloading/kurumiloading.hh"
 
 auto DebuggerEngine::AddStringToListView(QListView* list, QString stringArgument) -> void {
 
@@ -709,6 +710,15 @@ auto DebuggerEngine::handleLoadDllDebugEvent(const LOAD_DLL_DEBUG_INFO& info) ->
         if (dbgModule.m_qStName.contains("ntdll.dll"))
             QThread::create([this, &dbgModule] {
 
+                static QPointer<KurumiLoading> kurload;
+
+                QMetaObject::invokeMethod(qApp, []() {
+
+                        kurload = new KurumiLoading();
+                        kurload->show();
+
+                }, Qt::QueuedConnection);
+
                 this->m_guiCfg.statusbar->showMessage("[!] Kurumi Engine is analyzing all program and modules, and Windows Apis Internals, this will take a while to complete, make sure you have a internet connection.", 0);
 
                 this->m_KurumiEngineStarted = Kurumi::InitKurumiHKPDB(dbgModule.m_qStName.toStdString());
@@ -717,6 +727,10 @@ auto DebuggerEngine::handleLoadDllDebugEvent(const LOAD_DLL_DEBUG_INFO& info) ->
                     throw std::exception("OH, NO.. We want some symbols to explore windows internals and something goes really fucking bad.");
 
                 this->m_guiCfg.statusbar->showMessage("[OK] Kurumi Engine has ended the program and Winapi analysis, now you may be able to inspect more internals things.", 5);
+
+                kurload->close();
+
+                delete kurload;
 
             })->start();
 
@@ -1766,7 +1780,7 @@ auto DebuggerEngine::AnalyseDebugProcessVirtualMemory() -> void {
 
         if (uipStartAddress != 0) {
 
-            DebugMemory dbgMem(reinterpret_cast<uintptr_t>(mb.BaseAddress), QString(wchInformation), GetMemoryType(mb.Type), GetMemoryState(mb.State), GetMemoryProtection(mb.Protect), mb.RegionSize/1000);
+            DebugMemory dbgMem(reinterpret_cast<uintptr_t>(mb.BaseAddress), QString::fromWCharArray(wchInformation), GetMemoryType(mb.Type), GetMemoryState(mb.State), GetMemoryProtection(mb.Protect), mb.RegionSize/1000);
 
             model->appendRow(QList<QStandardItem*>() << new QStandardItem(QString::number(dbgMem.m_uipStartAddress, 16).toUpper())
                                                      << new QStandardItem(QString::number(dbgMem.m_szPage, 10).toUpper() + " KB")
@@ -1821,14 +1835,14 @@ auto DebuggerEngine::ListAllHandleObjectsForDebugeeProcess() -> void {
 
         auto [handleOriginal, typeLength, typeBuffer, nameLength, nameBuffer] = UtilsWindowsSyscall::GetRemoteHandleTableHandleInformation(this->m_processInfo.second.dwProcessId, handle);
 
-        DebugHandle dbgHandle(handleOriginal, QString(typeBuffer), QString(nameBuffer), typeLength, nameLength);
+        DebugHandle dbgHandle(handleOriginal, QString::fromWCharArray(typeBuffer.c_str()), QString::fromWCharArray(nameBuffer.c_str()), typeLength, nameLength);
 
         //Checking for invalid handles, not duplicated and with no info or errors.
         if (dbgHandle.m_hValue == INVALID_HANDLE_VALUE) continue;
 
         model->appendRow(QList<QStandardItem*>() << new QStandardItem(QString::number(reinterpret_cast<uintptr_t>(handleOriginal), 16).toUpper())
-                                                 << new QStandardItem(QString(typeBuffer))
-                                                 << new QStandardItem(QString(nameBuffer))
+                                                 << new QStandardItem(QString::fromWCharArray(typeBuffer.c_str()))
+                                                 << new QStandardItem(QString::fromWCharArray(nameBuffer.c_str()))
         );
 
         this->m_debugHandles.push_back(dbgHandle);

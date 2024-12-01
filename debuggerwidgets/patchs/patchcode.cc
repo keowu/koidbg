@@ -2,7 +2,7 @@
     File: PatchCode.cc
     Author: João Vitor(@Keowu)
     Created: 17/11/2024
-    Last Update: 24/11/2024
+    Last Update: 01/12/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -68,7 +68,7 @@ auto PatchCode::onApplyPatchClicked() -> void {
     ui->lblPatchWarn->setText("");
 
     #if defined(__aarch64__) || defined(_M_ARM64)
-        auto result = this->m_asmm->assembleArm64Code(ui->txtDisasmPatch->toPlainText().toStdString());
+        auto newOpcodes = this->m_asmm->assembleArm64Code(ui->txtDisasmPatch->toPlainText().toStdString());
         auto oriOpcodes = this->m_asmm->assembleArm64Code(ui->txtDisasmPatch->toPlainText().toStdString());
     #elif defined(__x86_64__) || defined(_M_X64)
         auto newOpcodes = this->m_asmm->assembleX64Code(ui->txtDisasmPatch->toPlainText().toStdString());

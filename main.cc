@@ -2,7 +2,7 @@
     File: main.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 24/11/2024
+    Last Update: 01/12/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -10,7 +10,6 @@
 #include <QtWidgets/QApplication>
 #include <QMessageBox>
 #include <Shlobj.h>
-#include "testcode/TestesKeystoneIntegration.hh"
 
 
 auto elevateProcess() -> void {
@@ -71,14 +70,14 @@ auto EnableDebugPrivilege() -> bool {
 
 int main(int argc, char *argv[]) {
 
-    /*if (!IsUserAnAdmin())
+    /* TODO: REMOVE IN THE FUTURE
+     * if (!IsUserAnAdmin())
         elevateProcess();*/
 
     if (!EnableDebugPrivilege()) QMessageBox::critical(NULL, "No privilege", "HarukaMirai needs SeDebugPrivilege to run !");
 
     QApplication a(argc, argv);
 
-    //Turn off all logs on release by filter rules
     //QLoggingCategory::setFilterRules("*.debug=false\n"
     //                                 "*.warning=false\n"
     //                                 "*.info=false");

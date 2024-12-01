@@ -2,7 +2,7 @@
     File: MainDebuggerWindow.cc
     Author: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 24/11/2024
+    Last Update: 01/12/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -13,6 +13,7 @@
 #include "debuggerwidgets/patchs/memorypatchs.hh"
 #include "debuggerwidgets/patchs/exportpatchs.hh"
 #include "debuggerwidgets/patchs/importpatchs.hh"
+#include "debuggerwidgets/processorfeatures/processorfeatures.hh"
 #include <windows.h>
 #include <QDebug>
 #include <QFileDialog>
@@ -54,6 +55,7 @@ MainDebuggerWindow::MainDebuggerWindow(QWidget *parent)
     connect(ui->btnMemoryPatchs, &QAction::triggered, this, &MainDebuggerWindow::onMemoryPatchs);
     connect(ui->btnExportPatchs, &QAction::triggered, this, &MainDebuggerWindow::onExportPatchs);
     connect(ui->btnImportPatchs, &QAction::triggered, this, &MainDebuggerWindow::onImportPatchs);
+    connect(ui->btnProcessorFeatures, &QAction::triggered, this, &MainDebuggerWindow::onProcessorFeatures);
 
     /*
      * Block ListView Edit Value
@@ -122,10 +124,9 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
     }*/
 
     DebuggerEngine::GuiConfig guiCfg{
-
                                      ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
-                                      ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
-                                      ui->tblHandles, ui->tblInterrupts, ui->tblDisasmVw,
+                                     ui->lstModules, ui->lstUnloadedModules, ui->lstCallStack, ui->tblMemoryView,
+                                     ui->tblHandles, ui->tblInterrupts, ui->tblDisasmVw,
                                      { ui->memoryInspectorOne, ui->memoryInspectorTwo, ui->memoryInspectorThree },
                                      ui->outCommandConsole, ui->lstRegisteredVehs, ui->lstProcessCallbacks,
                                      ui->tblPdbFunctions, ui->lblPdbInspectorMetrics, ui->txtDecompiler,
@@ -308,6 +309,14 @@ auto MainDebuggerWindow::onImportPatchs() -> void {
     auto impPatchs = new ImportPatchs(this, this->m_dbgEngine->getNewPatchCallback());
 
     impPatchs->show();
+
+}
+
+auto MainDebuggerWindow::onProcessorFeatures() -> void {
+
+    auto procFeatures = new ProcessorFeatures(this);
+
+    procFeatures->show();
 
 }
 

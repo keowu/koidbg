@@ -234,6 +234,11 @@
       </property>
      </widget>
     </widget>
+    <widget class="QWidget" name="tab_12">
+     <attribute name="title">
+      <string>Graph View</string>
+     </attribute>
+    </widget>
     <widget class="QWidget" name="tab_14">
      <attribute name="title">
       <string>Debugger Automation</string>
@@ -645,8 +650,8 @@
     <addaction name="btnMemoryPatchs"/>
     <addaction name="btnExportPatchs"/>
     <addaction name="btnImportPatchs"/>
+    <addaction name="btnProcessorFeatures"/>
     <addaction name="btnColorMode"/>
-    <addaction name="actionARM_Processor_Features"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -749,7 +754,7 @@
     <string>Dark Mode</string>
    </property>
   </action>
-  <action name="actionARM_Processor_Features">
+  <action name="btnProcessorFeatures">
    <property name="text">
     <string>ARM Processor Features</string>
    </property>

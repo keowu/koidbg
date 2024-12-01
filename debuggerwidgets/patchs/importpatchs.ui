@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>595</width>
-    <height>322</height>
+    <width>451</width>
+    <height>126</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,10 +36,10 @@
    <widget class="QPushButton" name="btnImportPatchs">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>100</y>
-      <width>301</width>
-      <height>121</height>
+      <x>70</x>
+      <y>40</y>
+      <width>291</width>
+      <height>71</height>
      </rect>
     </property>
     <property name="text">

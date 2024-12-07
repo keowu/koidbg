@@ -2,7 +2,7 @@
     File: ProcessorFeatures.hh
     Author: João Vitor(@Keowu)
     Created: 25/11/2024
-    Last Update: 25/11/2024
+    Last Update: 06/12/2024
 
     Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
 */
@@ -10,6 +10,7 @@
 #define PROCESSORFEATURES_HH
 
 #include <QMainWindow>
+#include "debuggerutils/armprocessorinformation.hh"
 
 namespace Ui {
     class ProcessorFeatures;
@@ -25,6 +26,7 @@ public:
 
 private:
     Ui::ProcessorFeatures *ui;
+    std::unique_ptr<ArmProcessorInformation> armProcInfo = std::make_unique<ArmProcessorInformation>();
 
 };
 

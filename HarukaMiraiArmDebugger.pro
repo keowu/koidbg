@@ -15,6 +15,7 @@ SOURCES += \
     debuggerengine/debugmodule.cc \
     debuggerengine/debugthread.cc \
     debuggerutils/utilswindowssyscall.cc \
+    debuggerutils/armprocessorinformation.cc \
     debuggerwidgets/attachprocess/attachprocesswindow.cc \
     debuggerwidgets/custom/disasmview/harukadisasmview.cc \
     debuggerwidgets/custom/qhexview/QHexView.cc \
@@ -42,6 +43,7 @@ HEADERS += \
     debuggerengine/debugthread.hh \
     debuggerutils/defs.hh \
     debuggerutils/utilswindowssyscall.hh \
+    debuggerutils/armprocessorinformation.hh \
     debuggerwidgets/attachprocess/attachprocesswindow.hh \
     debuggerwidgets/custom/disasmview/harukadisasmhtmldelegate.hh \
     debuggerwidgets/custom/disasmview/harukadisasmview.hh \

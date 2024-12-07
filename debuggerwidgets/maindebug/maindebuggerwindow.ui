@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>HarukaMirai - Windows ARM64 Reverse Engineering Debugger</string>
+   <string>KoiDbg - Windows ARM64 Reverse Engineering Debugger</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabWidget">
@@ -636,7 +636,7 @@
      </font>
     </property>
     <property name="title">
-     <string>HarukaMirai</string>
+     <string>KoiDbg</string>
     </property>
     <addaction name="btnOpenExecutable"/>
     <addaction name="btnAttachProcessContainer"/>

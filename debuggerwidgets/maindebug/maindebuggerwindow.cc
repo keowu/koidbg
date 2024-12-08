@@ -116,12 +116,12 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
         return;
     }
 
-    /*if (!Kurumi::IsArm64(filePath.toStdString())) {
+    if (!Kurumi::IsArm64(filePath.toStdString())) {
 
-        qDebug() << "MiIsArm64:: Return false! Not supported PE FILE.";
+        ui->statusbar->showMessage("[Invalid executable file]: The provided PE file path doesn't contains a valid ARM64 binary.", 4000);
 
         return;
-    }*/
+    }
 
     DebuggerEngine::GuiConfig guiCfg{
                                      ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
@@ -324,8 +324,8 @@ void MainDebuggerWindow::onAbout() {
 
     QMessageBox msgBox;
 
-    msgBox.setWindowTitle("About HarukaMirai DBG");
-    msgBox.setText("(C) Fluxuss Software Security, LLC - HarukaDBG\n\nThis Version is Licensed to: João Vitor(@Keowu)\n\nVersion: DEV");
+    msgBox.setWindowTitle("About KoiDbg");
+    msgBox.setText("(C) Maldec Labs - KoiDbg\n\nThis Version is Licensed to: DEVELOPER_BUILD\n\nVersion: DEV_INTERNAL");
     msgBox.setIcon(QMessageBox::Information);
     msgBox.setStandardButtons(QMessageBox::Ok);
 

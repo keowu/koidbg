@@ -29,13 +29,13 @@ class KurumiPDB {
 private:
     std::string m_filePath;
     std::string m_savePath;
-    auto CheckExistOrCreateHarukaMiraiPDBFolder() -> void;
+    auto CheckExistOrCreateKoiPDBFolder() -> void;
     auto CheckExistPdbFileOnFolder(std::wstring fileNameWithoutExtension) -> bool;
 
 public:
 
     KurumiPDB(std::string filePath) : m_filePath(filePath) { }
-    auto DownloadHarukaMiraiPdb() -> bool;
+    auto DownloadKoiPdb() -> bool;
     auto FindPdbField(std::string fieldName) -> uintptr_t;
     auto FindPdbStructField(std::string structName, std::string fieldName) -> uintptr_t;
 
@@ -55,11 +55,11 @@ namespace Kurumi {
 
     //Publics
     __declspec(dllexport) auto _stdcall HasInternetConnection() -> bool;
-    __declspec(dllexport) auto _stdcall InitKurumiHKPDB(std::string filePath) -> bool;
-    __declspec(dllexport) auto _stdcall FindFieldHKPDB(std::string fieldName) -> uintptr_t;
-    __declspec(dllexport) auto _stdcall FindStructFieldHKPDB(std::string structName, std::string fieldName) -> uintptr_t;
+    __declspec(dllexport) auto _stdcall InitKurumiKOPDB(std::string filePath) -> bool;
+    __declspec(dllexport) auto _stdcall FindFieldKoiPDB(std::string fieldName) -> uintptr_t;
+    __declspec(dllexport) auto _stdcall FindStructFieldKOPDB(std::string structName, std::string fieldName) -> uintptr_t;
     __declspec(dllexport) auto _stdcall IsArm64(std::string filePath) -> bool;
-    __declspec(dllexport) auto _stdcall AttachKewDbgHarukaMiraiDevelopmentInterface() -> void;
+    __declspec(dllexport) auto _stdcall AttachKewDbgKoiDbgDevelopmentInterface() -> void;
     __declspec(dllexport) auto _stdcall ParsePdbFunctionsAndSymbolsByPath(std::string pdbPath) ->std::vector<std::pair<std::string, uintptr_t>>;
 
 }

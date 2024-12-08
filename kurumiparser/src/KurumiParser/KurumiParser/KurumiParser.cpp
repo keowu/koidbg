@@ -26,11 +26,11 @@
 */
 #include "KurumiParser.hh"
 
-auto KurumiPDB::CheckExistOrCreateHarukaMiraiPDBFolder() -> void {
+auto KurumiPDB::CheckExistOrCreateKoiPDBFolder() -> void {
 
     auto miraiPath = std::filesystem::current_path().string() + "\\KoiDbgPdbs";
 
-    //The path for store HarukaMirai Pdbs already exists, just returning for now
+    //The path for store KoiDbg Pdbs already exists, just returning for now
     if (std::filesystem::exists(miraiPath) && std::filesystem::is_directory(miraiPath)) return;
 
     //If it not exist, let's create one
@@ -47,9 +47,9 @@ auto KurumiPDB::CheckExistPdbFileOnFolder(std::wstring fileNameWithoutExtension)
     return false;
 }
 
-auto KurumiPDB::DownloadHarukaMiraiPdb() -> bool {
+auto KurumiPDB::DownloadKoiPdb() -> bool {
 
-    this->CheckExistOrCreateHarukaMiraiPDBFolder();
+    this->CheckExistOrCreateKoiPDBFolder();
 
     auto guid = Kurumi::GetPDBGuidFromDllFile(this->m_filePath);
 
@@ -105,7 +105,7 @@ auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
     auto base = SymLoadModuleEx(hSym, nullptr, this->m_filePath.c_str(), nullptr, 0, 0, nullptr, 0);
     if (base == 0) {
 
-        std::cerr << "Kurumi::KoiEngine -> Koi was not able to load .hkpdb file.\n";
+        std::cerr << "Kurumi::KoiEngine -> Koi was not able to load .kopdb file.\n";
         
         SymCleanup(hSym);
         
@@ -141,7 +141,7 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
 
     if (!SymInitialize(hSym, m_filePath.c_str(), false)) {
 
-        std::cerr << "Kurumi::KoiEngine -> Fail to initialize .hkpdb engine.\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail to initialize .kopdb engine.\n";
 
         return -1;
     }
@@ -151,7 +151,7 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
     auto base = SymLoadModuleEx(hSym, nullptr, m_filePath.c_str(), nullptr, 0, 0, nullptr, 0);
     if (base == 0) {
 
-        std::cerr << "Kurumi::KoiEngine -> Fail to load .hkpdb file.\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail to load .kopdb file.\n";
 
         SymCleanup(hSym);
         return -1;
@@ -295,24 +295,24 @@ namespace Kurumi {
         return InternetCheckConnectionA("http://www.google.com", FLAG_ICC_FORCE_CONNECTION, 0);
     }
 
-    auto _stdcall InitKurumiHKPDB(std::string filePath) -> bool {
+    auto _stdcall InitKurumiKOPDB(std::string filePath) -> bool {
 
         Kurumi::kurumiPdb = std::make_unique<KurumiPDB>(filePath);
 
-        return kurumiPdb->DownloadHarukaMiraiPdb();
+        return kurumiPdb->DownloadKoiPdb();
     }
 
-    auto _stdcall FindFieldHKPDB(std::string fieldName) -> uintptr_t {
+    auto _stdcall FindFieldKoiPDB(std::string fieldName) -> uintptr_t {
 
         return Kurumi::kurumiPdb->FindPdbField(fieldName);
     }
 
-    auto _stdcall FindStructFieldHKPDB(std::string structName, std::string fieldName) -> uintptr_t {
+    auto _stdcall FindStructFieldKOPDB(std::string structName, std::string fieldName) -> uintptr_t {
 
         return Kurumi::kurumiPdb->FindPdbStructField(structName, fieldName);
     }
 
-    auto _stdcall AttachKewDbgHarukaMiraiDevelopmentInterface() -> void {
+    auto _stdcall AttachKewDbgKoiDbgDevelopmentInterface() -> void {
 
         std::printf("Kurumi::KoiEngine -> The Maldec Lolis Code Debugger are desactivated on compile time to avoid bad use of engine and code.\n");
 

@@ -721,7 +721,7 @@ auto DebuggerEngine::handleLoadDllDebugEvent(const LOAD_DLL_DEBUG_INFO& info) ->
 
                 this->m_guiCfg.statusbar->showMessage("[!] Kurumi Engine is analyzing all program and modules, and Windows Apis Internals, this will take a while to complete, make sure you have a internet connection.", 0);
 
-                this->m_KurumiEngineStarted = Kurumi::InitKurumiHKPDB(dbgModule.m_qStName.toStdString());
+                this->m_KurumiEngineStarted = Kurumi::InitKurumiKOPDB(dbgModule.m_qStName.toStdString());
 
                 if (!this->m_KurumiEngineStarted)
                     throw std::exception("OH, NO.. We want some symbols to explore windows internals and something goes really fucking bad.");
@@ -2425,7 +2425,7 @@ auto DebuggerEngine::extractLdrpVectorHandlerListInformation() -> void {
 
     auto ntDll = this->m_debugModules.at(1);
 
-    auto LdrpVectorHandlerListOffset = Kurumi::FindFieldHKPDB("LdrpVectorHandlerList");
+    auto LdrpVectorHandlerListOffset = Kurumi::FindFieldKoiPDB("LdrpVectorHandlerList");
 
     if (LdrpVectorHandlerListOffset == 0xffffffffffffffff) return;
 
@@ -2451,8 +2451,8 @@ auto DebuggerEngine::extractNirvanaCallbackPresentOnDebugeeProcess() -> void {
 
         if (hThread == INVALID_HANDLE_VALUE) return;
 
-        isDetected = UtilsWindowsSyscall::NtAndProcessCallbacks::detectNirvanaCallback(this->hInternalDebugHandle, hThread,  { Kurumi::FindStructFieldHKPDB("_TEB64", "InstrumentationCallbackSp"), Kurumi::FindStructFieldHKPDB("_TEB64", "InstrumentationCallbackPreviousPc"),
-                                                                                     Kurumi::FindStructFieldHKPDB("_TEB64", "InstrumentationCallbackPreviousSp"), Kurumi::FindStructFieldHKPDB("_TEB64", "Instrumentation") });
+        isDetected = UtilsWindowsSyscall::NtAndProcessCallbacks::detectNirvanaCallback(this->hInternalDebugHandle, hThread,  { Kurumi::FindStructFieldKOPDB("_TEB64", "InstrumentationCallbackSp"), Kurumi::FindStructFieldKOPDB("_TEB64", "InstrumentationCallbackPreviousPc"),
+                                                                                     Kurumi::FindStructFieldKOPDB("_TEB64", "InstrumentationCallbackPreviousSp"), Kurumi::FindStructFieldKOPDB("_TEB64", "Instrumentation") });
 
         if (isDetected) {
 
@@ -2492,7 +2492,7 @@ auto DebuggerEngine::extractNtDelegateTableCallbacks() -> void {
     auto ntdllBase = this->m_debugModules.at(1).m_lpModuleBase;
 
     for (const auto &fieldName : fieldNames) {
-        auto fieldValue = Kurumi::FindFieldHKPDB(fieldName.toStdString().c_str());
+        auto fieldValue = Kurumi::FindFieldKoiPDB(fieldName.toStdString().c_str());
 
         if (fieldValue != 0xffffffffffffffff) {
 
@@ -2509,7 +2509,7 @@ auto DebuggerEngine::extractNtDelegateTableCallbacks() -> void {
     auto vecDynamicTable = UtilsWindowsSyscall::DynamicFunctionTableList::GetDynFunctTableList(
 
         this->hInternalDebugHandle,
-        ntdllBase + Kurumi::FindFieldHKPDB("RtlpDynamicFunctionTable")
+        ntdllBase + Kurumi::FindFieldKoiPDB("RtlpDynamicFunctionTable")
 
     );
 
@@ -2527,7 +2527,7 @@ auto DebuggerEngine::extractNtDelegateTableCallbacks() -> void {
 
     auto vecDllNotificationList = UtilsWindowsSyscall::DLLNotificationsList::GetDllNotificationList(
 
-        this->hInternalDebugHandle, ntdllBase + Kurumi::FindFieldHKPDB("LdrpDllNotificationList")
+        this->hInternalDebugHandle, ntdllBase + Kurumi::FindFieldKoiPDB("LdrpDllNotificationList")
 
     );
 
@@ -2546,7 +2546,7 @@ auto DebuggerEngine::extractNtDelegateTableCallbacks() -> void {
     auto vecSecMemListHead = UtilsWindowsSyscall::SecMemListHead::GetSecMemListHead(
 
         this->hInternalDebugHandle,
-        ntdllBase + Kurumi::FindFieldHKPDB("RtlpSecMemListHead")
+        ntdllBase + Kurumi::FindFieldKoiPDB("RtlpSecMemListHead")
 
     );
 
@@ -2565,7 +2565,7 @@ auto DebuggerEngine::extractNtDelegateTableCallbacks() -> void {
     auto vecKernelKctValued = UtilsWindowsSyscall::KernelKCT::GetKctTable(
 
         this->hInternalDebugHandle,
-        Kurumi::FindStructFieldHKPDB("_PEB", "KernelCallbackTable")
+        Kurumi::FindStructFieldKOPDB("_PEB", "KernelCallbackTable")
 
     );
 

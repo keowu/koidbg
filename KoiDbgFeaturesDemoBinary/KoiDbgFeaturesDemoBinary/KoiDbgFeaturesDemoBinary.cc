@@ -1,10 +1,10 @@
 /*
-    File: HarukaFeaturesDemoBinary.cc
-    Author: João Vitor(@Keowu)
+    File: KoiDbgFeaturesDemoBinary.cc
+    Authors: João Vitor(@Keowu)
     Created: 09/11/2024
-    Last Update: 24/11/2024
+    Last Update: 08/12/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
 #include <iostream>
 #include <Windows.h>
@@ -12,14 +12,14 @@
 
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 
-using pNtSetInformationProcess = NTSTATUS (NTAPI*)(
+using pNtSetInformationProcess = NTSTATUS(NTAPI*)(
 
     HANDLE ProcessHandle,
     PROCESS_INFORMATION_CLASS ProcessInformationClass,
     PVOID ProcessInformation,
     ULONG ProcessInformationLength
 
-);
+    );
 
 typedef struct _PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION {
 
@@ -27,7 +27,7 @@ typedef struct _PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION {
     ULONG Reserved;
     PVOID Callback;
 
-} PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION, *PPROCESS_INSTRUMENTATION_CALLBACK_INFORMATION;
+} PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION, * PPROCESS_INSTRUMENTATION_CALLBACK_INFORMATION;
 
 auto WINAPI runThread(PVOID args) -> DWORD {
 
@@ -43,11 +43,11 @@ EXTERN_C auto InstrumentationCallbackInternal(PEXCEPTION_RECORD ExceptionRecord,
 
     std::printf("Caught Exception at : 0x%p\n", ExceptionRecord->ExceptionAddress);
 
-    #if defined(_M_ARM64) || defined(__arm64__)
-        ContextRecord->Pc++;
-    #elif defined(_M_X64) || defined(__x86_64__)
-        ContextRecord->Rip++;
-    #endif
+#if defined(_M_ARM64) || defined(__arm64__)
+    ContextRecord->Pc++;
+#elif defined(_M_X64) || defined(__x86_64__)
+    ContextRecord->Rip++;
+#endif
 
     RtlRestoreContext(ContextRecord, NULL);
 }
@@ -167,13 +167,13 @@ typedef union _LDR_DLL_NOTIFICATION_DATA {
 
 } LDR_DLL_NOTIFICATION_DATA, * PLDR_DLL_NOTIFICATION_DATA;
 
-using PLDR_DLL_NOTIFICATION_FUNCTION =  VOID(CALLBACK*)(
+using PLDR_DLL_NOTIFICATION_FUNCTION = VOID(CALLBACK*)(
 
     ULONG                       NotificationReason,
     PLDR_DLL_NOTIFICATION_DATA  NotificationData,
     PVOID                       Context
-    
-);
+
+    );
 
 typedef struct _LDR_DLL_NOTIFICATION_ENTRY {
 
@@ -181,13 +181,13 @@ typedef struct _LDR_DLL_NOTIFICATION_ENTRY {
     PLDR_DLL_NOTIFICATION_FUNCTION Callback;
     PVOID                          Context;
 
-} LDR_DLL_NOTIFICATION_ENTRY, *PLDR_DLL_NOTIFICATION_ENTRY;
+} LDR_DLL_NOTIFICATION_ENTRY, * PLDR_DLL_NOTIFICATION_ENTRY;
 
 #define LDR_DLL_NOTIFICATION_REASON_LOADED (1)
 #define LDR_DLL_NOTIFICATION_REASON_UNLOADED (2)
 
 auto CALLBACK DllNotificationCallback(
-    
+
     ULONG NotificationReason,
     LDR_DLL_NOTIFICATION_DATA* NotificationData,
     PVOID Context
@@ -196,27 +196,27 @@ auto CALLBACK DllNotificationCallback(
 
     switch (NotificationReason) {
 
-        case LDR_DLL_NOTIFICATION_REASON_LOADED:
-            //std::wcout << L"DLL Loaded: " << NotificationData->Loaded.FullDllName->Buffer << std::endl;
-            break;
-        case LDR_DLL_NOTIFICATION_REASON_UNLOADED:
-            //std::wcout << L"DLL Unloaded: " << NotificationData->Unloaded.FullDllName->Buffer << std::endl;
-            break;
-        default:
-            //std::wcout << L"Unknown DLL Notification" << std::endl;
-            break;
+    case LDR_DLL_NOTIFICATION_REASON_LOADED:
+        //std::wcout << L"DLL Loaded: " << NotificationData->Loaded.FullDllName->Buffer << std::endl;
+        break;
+    case LDR_DLL_NOTIFICATION_REASON_UNLOADED:
+        //std::wcout << L"DLL Unloaded: " << NotificationData->Unloaded.FullDllName->Buffer << std::endl;
+        break;
+    default:
+        //std::wcout << L"Unknown DLL Notification" << std::endl;
+        break;
 
     }
 }
 
-using tpdLdrRegisterDllNotification = NTSTATUS (NTAPI*)(
+using tpdLdrRegisterDllNotification = NTSTATUS(NTAPI*)(
 
-        IN ULONG Flags,
-        IN PLDR_DLL_NOTIFICATION_FUNCTION NotificationFunction,
-        IN PVOID Context,
-        OUT PVOID* Cookie
+    IN ULONG Flags,
+    IN PLDR_DLL_NOTIFICATION_FUNCTION NotificationFunction,
+    IN PVOID Context,
+    OUT PVOID* Cookie
 
-);
+    );
 
 #define NT_SUCCESS(status) (((NTSTATUS)(status)) >= 0)
 

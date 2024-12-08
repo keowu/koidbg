@@ -2,7 +2,7 @@
     File: main.cc
     Authors: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 01/12/2024
+    Last Update: 08/12/2024
 
     Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
@@ -27,7 +27,7 @@ auto elevateProcess() -> void {
 
         if (!ShellExecuteEx(&sei))
 
-            QMessageBox::critical(NULL, "Error!", "HakuMirai needs admin privilege to run!");
+            QMessageBox::critical(NULL, "Error!", "KoiDbg needs admin privilege to run!");
 
 
         TerminateProcess(GetCurrentProcess(), 0);
@@ -70,21 +70,17 @@ auto EnableDebugPrivilege() -> bool {
 
 int main(int argc, char *argv[]) {
 
-    /* TODO: REMOVE IN THE FUTURE
+    /* TODO: REMOVE IN THE FUTURE OR MAKE IT BETTER
      * if (!IsUserAnAdmin())
         elevateProcess();*/
 
-    if (!EnableDebugPrivilege()) QMessageBox::critical(NULL, "No privilege", "HarukaMirai needs SeDebugPrivilege to run !");
+    if (!EnableDebugPrivilege()) QMessageBox::critical(NULL, "No privilege", "KoiDbg needs SeDebugPrivilege to run !");
 
     QApplication a(argc, argv);
 
-    //QLoggingCategory::setFilterRules("*.debug=false\n"
-    //                                 "*.warning=false\n"
-    //                                 "*.info=false");
-
     qInstallMessageHandler([](QtMsgType, const QMessageLogContext&, const QString &msg){
 
-        //On HarukaMirai, We don't care about Qt's threat management, we'll garant it by our own. and manipulating and taking care of the syncronization
+        //On KoiDbg, We don't care about Qt's threat management, we'll garant it by our own. and manipulating and taking care of the syncronization
         if (!(msg.contains("parent's thread is QThread") || msg.contains("threads started with QThread")) && msg.contains("[DBGALLOW]")) qDebug() << msg;
 
     });

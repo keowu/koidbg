@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="HarukaFeaturesDemoBinary.cc">
+    <ClCompile Include="KoiDbgFeaturesDemoBinary.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

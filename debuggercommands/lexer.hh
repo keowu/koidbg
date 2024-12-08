@@ -1,10 +1,10 @@
 /*
     File: lexer.hh
-    Author: João Vitor(@Keowu)
+    Authors: João Vitor(@Keowu)
     Created: 29/09/2024
     Last Update: 21/10/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
 #ifndef LEXER_H
 #define LEXER_H

@@ -1,10 +1,10 @@
 /*
     File: DebugBreakpoints.hh
-    Author: João Vitor(@Keowu)
+    Authors: João Vitor(@Keowu)
     Created: 11/08/2024
     Last Update: 08/09/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
 #ifndef DEBUGBREAKPOINT_H
 #define DEBUGBREAKPOINT_H

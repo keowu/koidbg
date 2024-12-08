@@ -1,15 +1,15 @@
 ﻿/*
     File: KurumiParser.cpp
-    Author: João Vitor(@Keowu)
+    Authors: João Vitor(@Keowu)
     Created: 21/10/2024
-    Last Update: 03/11/2024
+    Last Update: 08/12/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
 /*
     How to configure ?
 
-    You need to configure to desired arch, harukamirai use dual arch:
+    You need to configure to desired arch, koidbg's use dual arch:
 
         ARM64:
             Properties -> C/C++ -> General -> Additional Includes Directory -> "$(SolutionDir)LIEF\include\"
@@ -28,7 +28,7 @@
 
 auto KurumiPDB::CheckExistOrCreateHarukaMiraiPDBFolder() -> void {
 
-    auto miraiPath = std::filesystem::current_path().string() + "\\HarukaPdbs";
+    auto miraiPath = std::filesystem::current_path().string() + "\\KoiDbgPdbs";
 
     //The path for store HarukaMirai Pdbs already exists, just returning for now
     if (std::filesystem::exists(miraiPath) && std::filesystem::is_directory(miraiPath)) return;
@@ -40,7 +40,7 @@ auto KurumiPDB::CheckExistOrCreateHarukaMiraiPDBFolder() -> void {
 
 auto KurumiPDB::CheckExistPdbFileOnFolder(std::wstring fileNameWithoutExtension) -> bool {
 
-    auto miraiPath = std::filesystem::current_path().wstring() + L"\\HarukaPdbs\\" + fileNameWithoutExtension + L".pdb";
+    auto miraiPath = std::filesystem::current_path().wstring() + L"\\KoiDbgPdbs\\" + fileNameWithoutExtension + L".pdb";
 
     if (std::filesystem::exists(miraiPath) && std::filesystem::is_directory(miraiPath)) return true;
 
@@ -74,7 +74,7 @@ auto KurumiPDB::DownloadHarukaMiraiPdb() -> bool {
         L"https://msdl.microsoft.com/download/symbols/", fileNameWithoutExtension.c_str(),
         wGuid.c_str(), fileNameWithoutExtension.c_str());
 
-    auto savePath = (std::filesystem::current_path().wstring() + L"\\HarukaPdbs\\" + fileNameWithoutExtension + L".pdb");
+    auto savePath = (std::filesystem::current_path().wstring() + L"\\KoiDbgPdbs\\" + fileNameWithoutExtension + L".pdb");
 
     this->m_savePath.assign(savePath.begin(), savePath.end());
 
@@ -88,16 +88,16 @@ auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
     auto status = SymInitialize(hSym, this->m_filePath.c_str(), false);
     if (!status) {
 
-        std::cerr << "Kurumi::HarukaEngine -> Fail on haruka seeking for symbol initilizer provider.\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail on koi seeking for symbol initilizer provider.\n";
 
         return -1;
     }
 
-    status = SymSetSearchPath(hSym, (std::filesystem::current_path().string() + "\\HarukaPdbs\\").c_str());
+    status = SymSetSearchPath(hSym, (std::filesystem::current_path().string() + "\\KoiDbgPdbs\\").c_str());
 
     if (!status) {
 
-        std::cerr << "Kurumi::HarukaEngine -> Fail on haruka looking for a symbol path.\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail on koi looking for a symbol path.\n";
 
         return -1;
     }
@@ -105,7 +105,7 @@ auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
     auto base = SymLoadModuleEx(hSym, nullptr, this->m_filePath.c_str(), nullptr, 0, 0, nullptr, 0);
     if (base == 0) {
 
-        std::cerr << "Kurumi::HarukaEngine -> Haruka was not able to load .hkpdb file.\n";
+        std::cerr << "Kurumi::KoiEngine -> Koi was not able to load .hkpdb file.\n";
         
         SymCleanup(hSym);
         
@@ -121,7 +121,7 @@ auto KurumiPDB::FindPdbField(std::string fieldName) -> uintptr_t {
     status = SymGetTypeFromName(hSym, base, fieldName.c_str(), info);
     if (!status) {
         
-        std::cerr << "Kurumi::HarukaEngine -> Haruka was not able to get typeinfo by name (This normally happen when this symbol is not loaded by OS yet).\n";
+        std::cerr << "Kurumi::KoiEngine -> Koi was not able to get typeinfo by name (This normally happen when this symbol is not loaded by OS yet).\n";
         
         SymCleanup(hSym);
     
@@ -141,17 +141,17 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
 
     if (!SymInitialize(hSym, m_filePath.c_str(), false)) {
 
-        std::cerr << "Kurumi::HarukaEngine -> Fail to initialize .hkpdb engine.\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail to initialize .hkpdb engine.\n";
 
         return -1;
     }
 
-    SymSetSearchPath(hSym, (std::filesystem::current_path().string() + "\\HarukaPdbs\\").c_str());
+    SymSetSearchPath(hSym, (std::filesystem::current_path().string() + "\\KoiDbgPdbs\\").c_str());
 
     auto base = SymLoadModuleEx(hSym, nullptr, m_filePath.c_str(), nullptr, 0, 0, nullptr, 0);
     if (base == 0) {
 
-        std::cerr << "Kurumi::HarukaEngine -> Fail to load .hkpdb file.\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail to load .hkpdb file.\n";
 
         SymCleanup(hSym);
         return -1;
@@ -163,7 +163,7 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
 
     if (!SymGetTypeFromName(hSym, base, structName.c_str(), &symInfoPackage.si)) {
 
-        std::cerr << "Kurumi::HarukaEngine -> Fail to locate a struct in hkpdb: " << structName << "\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail to locate a struct in kopdb: " << structName << "\n";
 
         SymUnloadModule64(hSym, base);
         SymCleanup(hSym);
@@ -176,7 +176,7 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
     DWORD numChildren = 0;
     if (!SymGetTypeInfo(hSym, moduleBase, typeId, TI_GET_CHILDRENCOUNT, &numChildren)) {
 
-        std::cerr << "Kurumi::HarukaEngine -> Fail getting hkpdb struct members.\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail getting kopdb struct members.\n";
 
         SymUnloadModule64(hSym, base);
         SymCleanup(hSym);
@@ -190,7 +190,7 @@ auto KurumiPDB::FindPdbStructField(std::string structName, std::string fieldName
 
     if (!SymGetTypeInfo(hSym, moduleBase, typeId, TI_FINDCHILDREN, children)) {
 
-        std::cerr << "Kurumi::HarukaEngine -> Fail getting hkpdb child fields.\n";
+        std::cerr << "Kurumi::KoiEngine -> Fail getting kopdb child fields.\n";
 
         delete[] children;
 
@@ -314,7 +314,7 @@ namespace Kurumi {
 
     auto _stdcall AttachKewDbgHarukaMiraiDevelopmentInterface() -> void {
 
-        std::printf("Kurumi::HarukaEngine -> The Fluxuss Lolis Code Debugger are desactivated on compile time to avoid bad use of engine and code.\n");
+        std::printf("Kurumi::KoiEngine -> The Maldec Lolis Code Debugger are desactivated on compile time to avoid bad use of engine and code.\n");
 
     }
 

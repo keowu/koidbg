@@ -1,10 +1,10 @@
 /*
     File: DebuggerEngine.cc
-    Author: João Vitor(@Keowu)
+    Authors: João Vitor(@Keowu)
     Created: 21/07/2024
-    Last Update: 01/12/2024
+    Last Update: 08/12/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
 #include <bitset>
 #include "debuggerengine.hh"
@@ -325,9 +325,9 @@ auto DebuggerEngine::DebugCommandProcessingLoop(LPVOID args) -> DWORD {
 
                 delete[] buffer;
 
-            } else if (token.type == Token::TokenType::COMMAND && token.value == "!hk") {
+            } else if (token.type == Token::TokenType::COMMAND && token.value == "!ko") {
 
-                thiz->m_guiCfg.outCommandConsole->append("We need to implement this command, but for now take this cool music: \nhttps://www.youtube.com/watch?v=tf61cA6a-N0");
+                thiz->m_guiCfg.outCommandConsole->append("DEV MODE: \nhttps://github.com/maldeclabs/koidbg");
 
             } else if (token.type == Token::TokenType::COMMAND && (token.value == "!bs" || token.value == "!bh")) {
 

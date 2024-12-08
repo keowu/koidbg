@@ -1,8 +1,9 @@
+# MALDEC LABS - KOIDBG - .pro File
 QT += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-#HarukaMirai e suas dependencias usam C++ 20
+#KoiDbg e suas dependencias usam C++ 20
 CONFIG += c++20
 
 SOURCES += \

@@ -1,10 +1,10 @@
 /*
     File: QHexView.cc
-    Author: João Vitor(@Keowu) - 2024, @VitorMob - 2022, @virinext - 2015
+    Authors: João Vitor(@Keowu) - 2024, @VitorMob - 2022, @virinext - 2015
     Created: 30/08/2024
     Last Update: 01/09/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
 #include "debuggerwidgets/custom/qhexview/QHexView.hh"
 

@@ -144,7 +144,7 @@
          </rect>
         </property>
         <property name="placeholderText">
-         <string>Enter with a command example: !hk</string>
+         <string>Enter with a command example: !ko</string>
         </property>
        </widget>
        <widget class="QPushButton" name="btnSendCommand">
@@ -253,7 +253,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;To automate Haruka Mirai DBG you have some options:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1 - Use VSCODE to Write Scripts and control the debugger using the LUA Lang.&lt;/p&gt;&lt;p&gt;2 - Use IDA Pro Integration to control and syncronize your IDA Things and HarukaMirai Things.&lt;/p&gt;&lt;p&gt;3 - Use Haruka Mirai with Binary Ninja.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;THIS FEATURE IS ON DEVELOPMENT.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;To automate KoiDbg you have some options:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1 - Use VSCODE to Write Scripts and control the debugger using the LUA Lang.&lt;/p&gt;&lt;p&gt;2 - Use IDA Pro Integration to control and syncronize your IDA Things and KoiDbg Things.&lt;/p&gt;&lt;p&gt;3 - Use KoiDbg with Binary Ninja.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;THIS FEATURE IS ON DEVELOPMENT.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
     </widget>

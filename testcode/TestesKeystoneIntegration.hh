@@ -1,10 +1,10 @@
 /*
     File: TestesKeystoneIntegration.hh
-    Author: João Vitor(@Keowu)
+    Authors: João Vitor(@Keowu)
     Created: 17/11/2024
     Last Update: 17/11/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
 #ifndef TESTESKEYSTONEINTEGRATION_HH
 #define TESTESKEYSTONEINTEGRATION_HH

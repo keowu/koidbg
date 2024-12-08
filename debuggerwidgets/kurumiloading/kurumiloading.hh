@@ -1,10 +1,10 @@
 /*
     File: KurumiLoading.hh
-    Author: João Vitor(@Keowu)
+    Authors: João Vitor(@Keowu)
     Created: 30/11/2024
     Last Update: 01/12/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 */
 #ifndef KURUMILOADING_HH
 #define KURUMILOADING_HH

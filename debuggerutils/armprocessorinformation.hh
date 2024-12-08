@@ -1,10 +1,10 @@
 /*
     File: armprocessorinformaton.hh
-    Author: João Vitor(@Keowu)
+    Authors: João Vitor(@Keowu)
     Created: 03/12/2024
     Last Update: 06/12/2024
 
-    Copyright (c) 2024. github.com/keowu/harukamiraidbg. All rights reserved.
+    Copyright (c) 2024. https://github.com/maldeclabs/koidbg. All rights reserved.
 
     Instantiate with a std::unique_ptr for safety free memory after class usage.
 */

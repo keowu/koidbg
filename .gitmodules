@@ -1,0 +1,3 @@
+[submodule "libraries/lief"]
+	path = libraries/lief
+	url = git@github.com:maldeclabs/lief.git

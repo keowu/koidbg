@@ -116,12 +116,12 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
         return;
     }
 
-    /*if (!Kurumi::IsArm64(filePath.toStdString())) {
+    if (!Kurumi::IsArm64(filePath.toStdString())) {
 
         ui->statusbar->showMessage("[Invalid executable file]: The provided PE file path doesn't contains a valid ARM64 binary.", 4000);
 
         return;
-    }*/
+    }
 
     DebuggerEngine::GuiConfig guiCfg{
                                      ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,

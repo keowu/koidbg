@@ -116,12 +116,12 @@ void MainDebuggerWindow::onOpenExecutableClicked() {
         return;
     }
 
-    if (!Kurumi::IsArm64(filePath.toStdString())) {
+    /*if (!Kurumi::IsArm64(filePath.toStdString())) {
 
         ui->statusbar->showMessage("[Invalid executable file]: The provided PE file path doesn't contains a valid ARM64 binary.", 4000);
 
         return;
-    }
+    }*/
 
     DebuggerEngine::GuiConfig guiCfg{
                                      ui->lstRegisters, ui->lstStack, ui->statusbar, ui->lstThreads,
@@ -325,7 +325,7 @@ void MainDebuggerWindow::onAbout() {
     QMessageBox msgBox;
 
     msgBox.setWindowTitle("About KoiDbg");
-    msgBox.setText("(C) Maldec Labs - KoiDbg\n\nThis Version is Licensed to: DEVELOPER_BUILD\n\nVersion: DEV_INTERNAL");
+    msgBox.setText("(C) Maldec Labs - KoiDbg\n\nThis Version is Licensed to: KEOWU\n\nVersion: DEV_INTERNAL");
     msgBox.setIcon(QMessageBox::Information);
     msgBox.setStandardButtons(QMessageBox::Ok);
 

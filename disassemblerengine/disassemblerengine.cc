@@ -63,6 +63,7 @@ auto DisassemblerEngine::RunCapstoneEngineAarch64(uintptr_t uipVirtualAddress, u
                 else if (DisassemblerUtils::AARCH64::is_imm_reference(insn[j]))
                     mnemonicStr = QString("<harukageneric style='color:red;'>%1</harukageneric> <harukaimm style='color:purple;'>%2</harukaimm>").arg(insn[j].mnemonic, insn[j].op_str).toUpper();
 
+
                 const unsigned char* bytes = insn[j].bytes;
 
                 size_t length = sizeof(insn[j].bytes) / sizeof(insn[j].bytes[0]);

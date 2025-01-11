@@ -234,11 +234,6 @@
       </property>
      </widget>
     </widget>
-    <widget class="QWidget" name="tab_12">
-     <attribute name="title">
-      <string>Graph View</string>
-     </attribute>
-    </widget>
     <widget class="QWidget" name="tab_14">
      <attribute name="title">
       <string>Debugger Automation</string>

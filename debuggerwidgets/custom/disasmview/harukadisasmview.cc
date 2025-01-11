@@ -380,7 +380,7 @@ void HarukaDisasmView::onDecompileToPseudoC() {
             "}");
     #endif
 
-    this->m_qTabHaruka->setCurrentIndex(11);
+    this->m_qTabHaruka->setCurrentIndex(10);
 
 }
 

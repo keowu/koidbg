@@ -297,6 +297,29 @@ namespace Kurumi {
 
     auto _stdcall InitKurumiKOPDB(std::string filePath) -> bool {
 
+        auto getDllPath = []() -> std::string {
+            
+            char path[MAX_PATH] { 0 };
+
+            auto hModule = GetModuleHandleA("ntdll.dll");
+            
+            if (!hModule) {
+                MessageBoxA(NULL, "Failed to get module handle for NTDLL.DLL", "KOI::KURUMI::ERROR", MB_ICONERROR);
+                throw std::runtime_error("KOI::KURUMI::ERROR -> Failed to get module handle for NTDLL.DLL");
+            }
+
+            auto pathLen = GetModuleFileNameA(hModule, path, MAX_PATH);
+
+            if (pathLen == 0 || pathLen >= MAX_PATH) {
+                MessageBoxA(NULL, "Failed to get module path or path too long.", "KOI::KURUMI::ERROR", MB_ICONERROR);
+                throw std::runtime_error("KOI::KURUMI::ERROR -> Failed to get module path or path too long.");
+            }
+
+            return std::string(path);
+        };
+
+        if (filePath.empty() || filePath == "" || filePath.find("ntdll.dll") == std::string::npos) filePath.assign(getDllPath());
+
         Kurumi::kurumiPdb = std::make_unique<KurumiPDB>(filePath);
 
         return kurumiPdb->DownloadKoiPdb();

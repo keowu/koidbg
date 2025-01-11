@@ -162,6 +162,9 @@ INCLUDEPATH += $$PWD/dependencies/nlohmann_json/
 
 QMAKE_LFLAGS_WINDOWS = /NODEFAULTLIB:LIBCMT
 
+#HIDE KOIDBG ConsoleWindows for debug on release mode.
+QMAKE_LFLAGS += /SUBSYSTEM:WINDOWS
+
 FORMS += \
     debuggerwidgets/attachprocess/attachprocesswindow.ui \
     debuggerwidgets/maindebug/maindebuggerwindow.ui \

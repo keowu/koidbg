@@ -325,7 +325,17 @@ void MainDebuggerWindow::onAbout() {
     QMessageBox msgBox;
 
     msgBox.setWindowTitle("About KoiDbg");
-    msgBox.setText("(C) Maldec Labs - KoiDbg\n\nThis Version is Licensed to: KEOWU\n\nVersion: DEV_INTERNAL");
+    QString aboutInfoMsg = "(C) Maldec Labs - KoiDbg\n\nThis Version is Licensed to: " +
+                           std::invoke([]() -> QString {
+
+                               char computerName[MAX_COMPUTERNAME_LENGTH + 1]{ 0 };
+
+                               DWORD size = sizeof(computerName) / sizeof(computerName[0]);
+
+                               if (GetComputerNameA(computerName, &size)) return QString::fromUtf8(computerName); else return QString("ANONYMOUS");
+
+                           }) + "\n\nVersion: 11/01/2025 - 21:10 - ALPHA-MVP";
+    msgBox.setText(aboutInfoMsg);
     msgBox.setIcon(QMessageBox::Information);
     msgBox.setStandardButtons(QMessageBox::Ok);
 

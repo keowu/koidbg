@@ -219,7 +219,7 @@ void HarukaDisasmView::onDecompileToPseudoC() {
     #if defined(_M_ARM64) || defined(__arm64__)
 
     this->m_txtDecompiler->setPlainText(
-                                            "Generated with KOTORI DECOMPILER at HarukaMirai - Named License to keowu.re@Fluxuss Software Security, LLC\n\n"
+                                            "Generated with KOTORI DECOMPILER at KoiDbg - Named License to keowu.re@Maldec Labs\n\n"
                                             "void unknownDecompiledFunction() {\n"
                                             "    // STP X29, X30, [SP, #-0x30+var_s0]!\n"
                                             "    // STP X19, X20, [SP, #var_s10]\n"
@@ -309,7 +309,7 @@ void HarukaDisasmView::onDecompileToPseudoC() {
     #elif defined(_M_X64) || defined(__x86_64__)
 
         this->m_txtDecompiler->setPlainText(
-                                            "Generated with KOTORI DECOMPILER at HarukaMirai - Named License to keowu.re@Fluxuss Software Security, LLC\n\n"
+                                            "Generated with KOTORI DECOMPILER at KoiDbg - Named License to keowu.re@Maldec Labs\n\n"
                                             "void unknownDecompiledFunction() {\n"
                                             "    // push rdi\n"
                                             "    // sub rsp, 50h\n"

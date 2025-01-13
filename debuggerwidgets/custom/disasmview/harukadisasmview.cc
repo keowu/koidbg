@@ -210,12 +210,14 @@ void HarukaDisasmView::onDecompileToPseudoC() {
 
     qDebug() << "HarukaDisasmView::onDecompileToPseudoC";
 
-    if (this->m_decompilerSyntax) delete m_decompilerSyntax;
+    //UNCOMMENT IT ON TO ENABLE DECOMPILER
+    //if (this->m_decompilerSyntax) delete m_decompilerSyntax;
 
-    this->m_decompilerSyntax = new Decompiler(this->m_txtDecompiler->document());
+    //this->m_decompilerSyntax = new Decompiler(this->m_txtDecompiler->document());
 
     this->m_txtDecompiler->setEnabled(true);
 
+    /*
     #if defined(_M_ARM64) || defined(__arm64__)
 
     this->m_txtDecompiler->setPlainText(
@@ -379,6 +381,9 @@ void HarukaDisasmView::onDecompileToPseudoC() {
                                             "    return;\n"
             "}");
     #endif
+*/
+
+    this->m_txtDecompiler->setPlainText("Sorry, The necessary files for the KoiDbg Kotori Decompiler to work are not available in this initial version of KoiDbg(KoiDbg-Alpha-MVP).\n\nThe Decompiler processes its asm-to-lifting-c on our cloud, which currently cannot handle the high demand of usage requests (it is possible to establish a partnership to gain access at this initial stage).");
 
     this->m_qTabHaruka->setCurrentIndex(10);
 

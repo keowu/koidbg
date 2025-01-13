@@ -242,13 +242,13 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>120</y>
+        <y>140</y>
         <width>691</width>
         <height>321</height>
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;To automate KoiDbg you have some options:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1 - Use VSCODE to Write Scripts and control the debugger using the LUA Lang.&lt;/p&gt;&lt;p&gt;2 - Use IDA Pro Integration to control and syncronize your IDA Things and KoiDbg Things.&lt;/p&gt;&lt;p&gt;3 - Use KoiDbg with Binary Ninja.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;THIS FEATURE IS ON DEVELOPMENT.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;To automate KoiDbg, you have a few options:&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1 - Use VS Code to write scripts and control the debugger using the Lua language.&lt;/p&gt;&lt;p&gt;2 - Use it with IDA Pro, Binary Ninja, Ghidra, and Cutter.&lt;/p&gt;&lt;p&gt;3 - Use the KoiDbg Cores Automation Guide to integrate it as a standalone library and operate without a GUI.&lt;/p&gt;&lt;p&gt;4 - Perform remote debugging with KoiDbg via a network socket(Windows ARM-IOT or lower-end-devices).&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;This feature is not available in this version of KoiDbg (KoiDbg-Alpha-MVP).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
     </widget>
@@ -598,6 +598,9 @@
       <string>Decompiler</string>
      </attribute>
      <widget class="QTextEdit" name="txtDecompiler">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -616,7 +619,7 @@
      <x>0</x>
      <y>0</y>
      <width>952</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="font">

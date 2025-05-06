@@ -17,51 +17,51 @@ To fully understand how KoiDbg works, read our published article. It is availabl
 
 Disassembler View:
 
-![Disassembler View](imgs/repo/Disassembler%20View.png)
+![Disassembler View](imgs/repo/DisassemblerView.png)
 
 Hardware & Software Interrupt:
 
-![Hardware & Software Interrupt](imgs/repo/Hardware%20&%20Software%20Interrupt.png)
+![Hardware & Software Interrupt](imgs/repo/HardwareSoftwareInterrupt.png)
 
 Call Stack:
 
-![Call Stack](imgs/repo/Call%20Stack.png)
+![Call Stack](imgs/repo/CallStack.png)
 
 Memory View:
 
-![Memory View](imgs/repo/Memory%20View.png)
+![Memory View](imgs/repo/MemoryView.png)
 
 Modules View:
 
-![Modules View](imgs/repo/Modules%20View.png)
+![Modules View](imgs/repo/ModulesView.png)
 
 Threads View:
 
-![Threads View](imgs/repo/Threads%20View.png)
+![Threads View](imgs/repo/ThreadsView.png)
 
 Handles View:
 
-![Handles View](imgs/repo/Handles%20View.png)
+![Handles View](imgs/repo/HandlesView.png)
 
 ProcessCallbacks View:
 
-![ProcessCallbacks View](imgs/repo/ProcessCallbacks%20View.png)
+![ProcessCallbacks View](imgs/repo/ProcessCallbacksView.png)
 
 PDB Inspector:
 
-![PDB Inspector](imgs/repo/PDB%20Inspector.png)
+![PDB Inspector](imgs/repo/PDBInspector.png)
 
 Hex View - Memory View:
 
-![Hex View - Memory View](imgs/repo/Hex%20View%20-%20Memory%20View.png)
+![Hex View - Memory View](imgs/repo/HexViewMemoryView.png)
 
 Console View:
 
-![Console View](imgs/repo/Console%20View.png)
+![Console View](imgs/repo/ConsoleView.png)
 
 Local Stack Symbols:
 
-![Local Stack Symbols](imgs/repo/Local%20Stack%20Symbols.png)
+![Local Stack Symbols](imgs/repo/LocalStackSymbols.png)
 
 **And much more!**
 

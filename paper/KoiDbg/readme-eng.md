@@ -242,7 +242,7 @@ This handler is always triggered when an ```EXIT_THREAD_DEBUG_EVENT``` is receiv
 
 ###### handleExitProcessDebugEvent
 
-When we receive an ```EXIT_PROCESS_DEBUG_EVENT```, it’s always tied to the main thread of the application, whose lifecycle has ended. Koi handles this event as an opportunity to reset the entire debugging session context and notify the user that the session has ended, providing the thread’s exit code and the most recent stored call stack, in case something didn’t go as the user expected.
+When we receive the ```EXIT_PROCESS_DEBUG_EVENT```, it indicates that the application being debugged has terminated, typically through normal means or due to the use of functions like ExitProcess or TerminateProcess. Koi interprets this event as an opportunity to reset the entire debugging session context. Additionally, the user is notified that the session has been terminated, providing the exit code of the last active thread and the associated call stack for that thread. This information is made available for the user to analyze, especially if something didn't go as expected.
 
 ![#8](/imgs/img08.png)
 
